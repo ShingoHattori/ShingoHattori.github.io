@@ -27,6 +27,11 @@ div.wrap{
     text-align:center;
     justify-content:center;
 }
+div.box{
+    display:flex;
+    width:100px;
+    height:100px;
+}
 pre.aa{
     white-space: pre;
     font-size: 16px;
@@ -37,7 +42,6 @@ pre.text{
     font-size: 16px;
     line-height: 18px;
     width: 20em;
-    text-align:left;
 }
 
 </style>
@@ -48,16 +52,16 @@ pre.text{
 <div class="wrap">
   <div class="boxAA">
     <pre class="aa">
-         ..::     ..:::::::..           
-    .~~^^^!!^::::........::^::          
-   :~. .::^^^                .:::.      
- .:.  ^^.  .. .     .     .     .^~.    
- .  .!. ..^^ ~~.~^  .^:   ~.      .7.   
-    ~. .~^^.77~:??!. ^!~  :~       :7   
-   ^: :!~7^!!  ~!^:7~:!Y^  ! .:     ^~  
-   ! ^^!J~!?   :^^!7J7~?J^:7 .!  .   7. 
-  ^: ^!?7 B@:     :G&amp&ampBY?7.! :~  .^  ^~ 
-  ~ :^?!..B@^     !&amp@@@&amp~7^^ ?5   ~.7:! 
+         ..::     ..:::::::..          
+    .~~^^^!!^::::........::^::         
+   :~. .::^^^                .:::.     
+ .:.  ^^.  .. .     .     .     .^~.   
+ .  .!. ..^^ ~~.~^  .^:   ~.      .7.  
+    ~. .~^^.77~:??!. ^!~  :~       :7  
+   ^: :!~7^!!  ~!^:7~:!Y^  ! .:     ^~ 
+   ! ^^!J~!?   :^^!7J7~?J^:7 .!  .   7.
+  ^: ^!?7 B@:     :G&amp&ampBY?7.! :~  .^  ^~
+  ~ :^?!..B@^     !&amp@@@&amp~7^^ ?5   ~.7:!
   ~ :!7! .!~      ^7G&amp#7 ^7:.PY   ^.7!! 
   ~ .!!!             ..  ^? ??^  :!:~!7 
  .~ :7.!!.           ....7^~~:~  !7~:~! 
@@ -73,8 +77,8 @@ pre.text{
   </div>
   <div class="boxTEXT">
     <pre class="text">
-      shatto@earth
-
+      shatto@earthあああああああああああああああ
+      ああああああああああああああああああああああああああああああ
     </pre>
   </div>
 </div>
