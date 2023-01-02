@@ -61,15 +61,33 @@ pre.text{
     line-height: 20px;
 }
 
+
+@media(min-width:751px){
+    /* for PC*/
+    .side{
+	padding:0 -25px;
+	display:flex;
+	justify-content: flex-start;
+    }
+    /*for mobile*/
+    .side>div{
+	width:48%;
+    }
+}
+/*common for both*/
+.yokonarabe>div{
+    margin:0 1%;
+}
+
+
 </style>
 
 </head>
 <body>
-<div>
-  <div class="wrap">
-    <div class="boxAA">
+  <div class="side">
+    <div>
       <pre class="aa">
-        ..::     ..:::::::..           
+	..::     ..:::::::..           
 	.~~^^^!!^::::........::^::          
 	:~. .::^^^                .:::.      
 	.:.  ^^.  .. .     .     .     .^~.    
@@ -86,13 +104,13 @@ pre.text{
 	::~!~:.:^~~~^^:^J^^^?!?^^^~^:. .:     
 	^~.:..       :7^...  ~.              
 	.           77.::. ..^:             
-        .7^::.    ^.^^            
-        ^!.      .:.  ^:           
-        .^7      .:.     ^           
-        ..      .:                          
+	.7^::.    ^.^^            
+	^!.      .:.  ^:           
+	.^7      .:.     ^           
+	..      .:                          
       </pre>
     </div>
-    <div class="boxTEXT">
+    <div>
       <table>
 	<tr><td>shatto@earth</td></tr>
 	<tr><td>------------</td></tr>
@@ -109,7 +127,7 @@ pre.text{
       </table>
     </div>
   </div>
-</div>
+  
 <div>
   <heading>Publication and Awards</heading>
 
