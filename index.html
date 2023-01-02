@@ -46,8 +46,8 @@ div.boxAA{
 div.boxTEXT{
     text-align:left;
 }
-div.wrap{
-    padding: 0 -25px;
+div.side{
+    padding: 0 15px;
     display:flex;
 }
 pre.aa{
@@ -61,22 +61,19 @@ pre.text{
     line-height: 20px;
 }
 
+.wrap{
+    padding: 0 -25px;
+    display:flex;
+}
 
-@media(min-width:751px){
-    /* for PC*/
-    .side{
-	padding:0 -25px;
-	display:flex;
-	justify-content: flex-start;
-    }
+@media screen and (max-width:480px){
     /*for mobile*/
-    .side>div{
+    .wrap{
 	width:48%;
     }
 }
 /*common for both*/
 .yokonarabe>div{
-    margin:0 1%;
 }
 
 
@@ -84,7 +81,7 @@ pre.text{
 
 </head>
 <body>
-  <div class="side">
+  <div class="wrap">
     <div>
       <pre class="aa">
 	..::     ..:::::::..           
@@ -128,6 +125,7 @@ pre.text{
     </div>
   </div>
   
+<br><br>  
 <div>
   <heading>Publication and Awards</heading>
 
