@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <style>
+      #reader {
+        width: 300px;
+        height: 250px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="reader"></div>
+    <script>
+      const reader = new QRCode(document.getElementById("reader"), {
+        width : 300,
+        height : 250
+      });
+
+      function scanQRCode() {
+        navigator.mediaDevices.getUserMedia({video: true})
+          .then(function(stream) {
+            const video = document.createElement("video");
+            const tracks = stream.getTracks();
+            video.setAttribute("autoplay", "");
+            video.setAttribute("muted", "");
+            video.setAttribute("playsinline", "");
+            document.body.appendChild(video);
+            video.srcObject = stream;
+
+            setTimeout(() => {
+              const scan = new QRCode.Scanner({
+                video: video,
+                continuous: true,
+                callback: function(result) {
+                  alert(`QR code detected: ${result}`);
+                  tracks.forEach((track) => {
+                    track.stop();
+                  });
+                }
+              });
+              scan.start();
+            }, 2000);
+          });
+      }
+
+      scanQRCode();
+    </script>
+  </body>
+</html>
