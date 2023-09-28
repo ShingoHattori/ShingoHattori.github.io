@@ -32,15 +32,16 @@ function setup() {
 }
 
 function draw() {
+  background(220);
   if (isPlaying) {
-    background(220);
-    balls.forEach(ball => {
-        ball.checkCollision(balls);
-        ball.update();
-        ball.display();
-    });
+      balls.forEach(ball => {
+          ball.checkCollision(balls);
+          ball.update();
+      });
+  }
+  balls.forEach(ball => ball.display()); // 常にボールを表示します
 }
-}
+
 
 function togglePlayPause() {
   isPlaying = !isPlaying;
