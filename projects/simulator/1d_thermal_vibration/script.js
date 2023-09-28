@@ -1,7 +1,7 @@
 let balls = [];
 const NUM_BALLS = 6;
 const BALL_RADIUS = 5;
-let slopeAngle = 3.14 / 4; // Angle of the slope
+let slopeAngle = 0; // Angle of the slope
 let isPlaying = true; // 再生中かどうかのフラグ
 
 
@@ -14,19 +14,17 @@ function setup() {
     // Create slider for simulation speed
     let slider = document.getElementById('slider');
     noUiSlider.create(slider, {
-        start: [1],
-        range: {
-            'min': [0.1],
-            'max': [3]
-        },
-        step: 0.1
-    });
+      start: [0],      // 0 radians at start
+      range: {
+          'min': [0],   // 0 radians
+          'max': [1.57] // pi/2 radians
+      },
+      step: 0.01       // increase by 0.01 radians
+  });
 
-    slider.noUiSlider.on('update', function (values) {
-        simulationSpeed = parseFloat(values[0]);
-        frameRate(60 * simulationSpeed);
-    });
-
+  slider.noUiSlider.on('update', function(values) {
+    slopeAngle = parseFloat(values[0]);
+});
     let playPauseButton = select('#playPauseButton');
     playPauseButton.mousePressed(togglePlayPause);
 }
