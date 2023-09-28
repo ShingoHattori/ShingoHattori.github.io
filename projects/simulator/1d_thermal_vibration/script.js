@@ -40,6 +40,7 @@ function setup() {
 
   slider_gravity.noUiSlider.on('update', function(values) {
   gravity = parseFloat(values[0]);
+  document.getElementById('gravity-value').innerText = `現在の重力: ${gravity.toFixed(2)}`;
   });
 
   document.getElementById('ball-count').addEventListener('change', function() {
