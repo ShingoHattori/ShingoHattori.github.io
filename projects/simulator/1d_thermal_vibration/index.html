@@ -27,6 +27,15 @@
             font-size: 1.5em;
             margin-bottom: 10px;
         }
+        .input-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+label {
+    margin-right: 10px;
+}
         #playPauseButton {
             padding: 10px 20px;
             border: none;
@@ -50,6 +59,15 @@
     <div class="slider-container">
         <div class="slider-title">下方向の加速度を調整</div>
         <div id="slider_gravity"></div>
+    </div>
+    <div class="input-container">
+        <label for="ball-count">球の数：</label>
+        <input type="number" id="ball-count" min="1" max="200" value="6">
+    </div>
+    
+    <div class="input-container">
+        <label for="ball-radius">球の半径：</label>
+        <input type="number" id="ball-radius" min="1" max="10" value="5">
     </div>
     <button id="playPauseButton">停止</button>
     <script src="script.js"></script>

@@ -1,6 +1,6 @@
 let balls = [];
-const NUM_BALLS = 6;
-const BALL_RADIUS = 5;
+let NUM_BALLS = 6;
+let BALL_RADIUS = 5;
 let slopeAngle = 0; // Angle of the slope
 let isPlaying = true; // 再生中かどうかのフラグ
 
@@ -24,24 +24,41 @@ function setup() {
 
   slider_gradient.noUiSlider.on('update', function(values) {
     slopeAngle = parseFloat(values[0]);
-});
+  });
 
 
- // Create slider for simulation speed
- let slider_gravity = document.getElementById('slider_gravity');
- noUiSlider.create(slider_gravity, {
-   start: [0],      // 0 radians at start
-   range: {
-       'min': [0],   // 0 radians
-       'max': [1] // pi/2 radians
-   },
-   step: 0.01       // increase by 0.01 radians
-});
+  // Create slider for simulation speed
+  let slider_gravity = document.getElementById('slider_gravity');
+  noUiSlider.create(slider_gravity, {
+    start: [0],      // 0 radians at start
+    range: {
+        'min': [0],   // 0 radians
+        'max': [1] // pi/2 radians
+    },
+    step: 0.01       // increase by 0.01 radians
+  });
 
-slider_gravity.noUiSlider.on('update', function(values) {
- gravity = parseFloat(values[0]);
-});
+  slider_gravity.noUiSlider.on('update', function(values) {
+  gravity = parseFloat(values[0]);
+  });
 
+  document.getElementById('ball-count').addEventListener('change', function() {
+    let newCount = int(this.value);
+    while (balls.length < newCount) {
+        balls.push(new Ball(random(BALL_RADIUS, width - BALL_RADIUS), height / 2, BALL_RADIUS));
+    }
+    while (balls.length > newCount) {
+        balls.pop();
+    }
+  });
+
+  document.getElementById('ball-radius').addEventListener('change', function() {
+    BALL_RADIUS = int(this.value);
+    balls = [];
+    for (let i = 0; i < NUM_BALLS; i++) {
+        balls.push(new Ball(random(BALL_RADIUS, width - BALL_RADIUS), height / 2, BALL_RADIUS));
+    }
+  });
 
 
     let playPauseButton = select('#playPauseButton');
