@@ -1,83 +1,88 @@
 let balls = [];
 const NUM_BALLS = 10;
 const BALL_RADIUS = 10;
+let simulationSpeed = 1;
 
 function setup() {
-    createCanvas(800, 400);
+    createCanvas(800, 100);
     for (let i = 0; i < NUM_BALLS; i++) {
-        balls.push(new Ball(random(width), random(height), BALL_RADIUS));
+        balls.push(new Ball(random(BALL_RADIUS, width - BALL_RADIUS), height / 2, BALL_RADIUS));
     }
 
-    // Create slider
+    // Create slider for simulation speed
     let slider = document.getElementById('slider');
     noUiSlider.create(slider, {
-        start: [0],  // initial angle
+        start: [1],
         range: {
-            'min': [-PI / 4],
-            'max': [PI / 4]
+            'min': [0.1],
+            'max': [3]
         },
-        step: 0.01,
-        format: {
-            to: function (value) {
-                return value.toFixed(2);
-            },
-            from: function (value) {
-                return parseFloat(value);
-            }
-        }
+        step: 0.1
     });
 
     slider.noUiSlider.on('update', function (values) {
-        let angle = parseFloat(values[0]);
-        updateGravityDirection(angle);
+        simulationSpeed = parseFloat(values[0]);
+        frameRate(60 * simulationSpeed);
     });
 }
 
 function draw() {
     background(220);
-
     balls.forEach(ball => {
+        ball.checkCollision(balls);
         ball.update();
         ball.display();
-    });
-}
-
-function updateGravityDirection(angle) {
-    let gravityMagnitude = 0.4;
-    let gravity = createVector(gravityMagnitude * sin(angle), gravityMagnitude * cos(angle));
-    balls.forEach(ball => {
-        ball.applyForce(gravity);
     });
 }
 
 class Ball {
     constructor(x, y, r) {
         this.position = createVector(x, y);
-        this.velocity = createVector(random(-2, 2), random(-2, 2));
+        this.velocity = createVector(random(-2, 2), 0);
         this.acceleration = createVector();
         this.radius = r;
-        this.mass = 1;  // For simplicity, keep this 1
     }
 
     applyForce(force) {
-        let f = p5.Vector.div(force, this.mass);  // Force = Mass * Acceleration
+        let f = p5.Vector.div(force, this.radius);
         this.acceleration.add(f);
+    }
+
+    checkCollision(otherBalls) {
+        for (let other of otherBalls) {
+            if (other === this) continue;
+
+            let distance = abs(this.position.x - other.position.x);
+
+            if (distance < this.radius * 2) {
+                console.log('collide');
+
+                let overlap = (this.radius * 2) - distance;
+                let correction = overlap / 2;
+
+                if (this.position.x > other.position.x) {
+                    this.position.x += correction;
+                    other.position.x -= correction;
+                } else {
+                    this.position.x -= correction;
+                    other.position.x += correction;
+                }
+
+                // Swap velocities
+                let tempVel = this.velocity.x;
+                this.velocity.x = other.velocity.x;
+                other.velocity.x = tempVel;
+            }
+        }
     }
 
     update() {
         this.velocity.add(this.acceleration);
         this.position.add(this.velocity);
-
-        // Reset acceleration for next frame
         this.acceleration.mult(0);
 
-        // Boundary collision check
         if (this.position.x > width - this.radius || this.position.x < this.radius) {
             this.velocity.x *= -1;
-        }
-
-        if (this.position.y > height - this.radius || this.position.y < this.radius) {
-            this.velocity.y *= -1;
         }
     }
 
