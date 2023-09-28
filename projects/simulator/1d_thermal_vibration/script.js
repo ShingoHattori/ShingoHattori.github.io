@@ -12,8 +12,8 @@ function setup() {
     }
 
     // Create slider for simulation speed
-    let slider = document.getElementById('slider');
-    noUiSlider.create(slider, {
+    let slider_gradient = document.getElementById('slider_gradient');
+    noUiSlider.create(slider_gradient, {
       start: [0],      // 0 radians at start
       range: {
           'min': [0],   // 0 radians
@@ -22,9 +22,28 @@ function setup() {
       step: 0.01       // increase by 0.01 radians
   });
 
-  slider.noUiSlider.on('update', function(values) {
+  slider_gradient.noUiSlider.on('update', function(values) {
     slopeAngle = parseFloat(values[0]);
 });
+
+
+ // Create slider for simulation speed
+ let slider_gravity = document.getElementById('slider_gravity');
+ noUiSlider.create(slider_gravity, {
+   start: [0],      // 0 radians at start
+   range: {
+       'min': [0],   // 0 radians
+       'max': [1] // pi/2 radians
+   },
+   step: 0.01       // increase by 0.01 radians
+});
+
+slider_gravity.noUiSlider.on('update', function(values) {
+ gravity = parseFloat(values[0]);
+});
+
+
+
     let playPauseButton = select('#playPauseButton');
     playPauseButton.mousePressed(togglePlayPause);
 }
@@ -99,7 +118,6 @@ class Ball {
     }
 
     update() {
-      const gravity = 0.1; 
       let accelerationDueToSlope = 0;
 
       if (slopeAngle === 3.14 / 2) {
