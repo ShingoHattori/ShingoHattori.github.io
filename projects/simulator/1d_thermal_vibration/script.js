@@ -1,7 +1,9 @@
 let balls = [];
-const NUM_BALLS = 10;
+const NUM_BALLS = 100;
 const BALL_RADIUS = 10;
 let slopeAngle = 0; // Angle of the slope
+let isPlaying = true; // 再生中かどうかのフラグ
+
 
 function setup() {
     createCanvas(800, 100);
@@ -24,15 +26,29 @@ function setup() {
         simulationSpeed = parseFloat(values[0]);
         frameRate(60 * simulationSpeed);
     });
+
+    let playPauseButton = select('#playPauseButton');
+    playPauseButton.mousePressed(togglePlayPause);
 }
 
 function draw() {
+  if (isPlaying) {
     background(220);
     balls.forEach(ball => {
         ball.checkCollision(balls);
         ball.update();
         ball.display();
     });
+}
+}
+
+function togglePlayPause() {
+  isPlaying = !isPlaying;
+  if (isPlaying) {
+      document.getElementById('playPauseButton').innerText = "停止";
+  } else {
+      document.getElementById('playPauseButton').innerText = "再生";
+  }
 }
 
 class Ball {
@@ -55,7 +71,6 @@ class Ball {
             let distance = abs(this.position.x - other.position.x);
 
             if (distance < this.radius * 2) {
-                console.log('collide');
 
                 let overlap = (this.radius * 2) - distance;
                 let correction = overlap / 2;
@@ -85,9 +100,13 @@ class Ball {
         this.position.add(this.velocity);
         this.acceleration.mult(0);
 
-        if (this.position.x > width - this.radius || this.position.x < this.radius) {
-            this.velocity.x *= -1;
-        }
+        if (this.position.x > width - this.radius) {
+          this.velocity.x *= -1;
+          this.position.x = width - this.radius;
+      } else if (this.position.x < this.radius) {
+          this.velocity.x *= -1;
+          this.position.x = this.radius;
+      }
     }
 
     display() {
