@@ -1,7 +1,7 @@
 let balls = [];
-const NUM_BALLS = 60;
+const NUM_BALLS = 6;
 const BALL_RADIUS = 5;
-let slopeAngle = 0; // Angle of the slope
+let slopeAngle = 3.14 / 4; // Angle of the slope
 let isPlaying = true; // 再生中かどうかのフラグ
 
 
@@ -34,7 +34,12 @@ function setup() {
 function draw() {
   background(220);
   translate(width / 2, height / 2); // Move to center of canvas
-  rotate(PI / 4); // Rotate by 45 degrees
+  rotate(slopeAngle); // Rotate by 45 degrees
+
+  // Draw boundary lines along which the balls move
+  stroke(0); // Set line color to black
+  line(-width/2, 0, width/2, 0); // Top boundary
+
   translate(-width / 2, -height / 2); // Move back
 
   if (isPlaying) {
@@ -96,8 +101,14 @@ class Ball {
     }
 
     update() {
-      const a = 0.001; 
-      let accelerationDueToSlope = a / tan(0.5);
+      const gravity = 0.1; 
+      let accelerationDueToSlope = 0;
+
+      if (slopeAngle === 3.14 / 2) {
+        accelerationDueToSlope = gravity;
+    } else {
+        accelerationDueToSlope = gravity * sin(slopeAngle);
+    }
       this.acceleration.x += accelerationDueToSlope;
 
       this.velocity.add(this.acceleration);
