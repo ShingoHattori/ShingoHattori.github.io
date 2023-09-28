@@ -1,7 +1,7 @@
 let balls = [];
 const NUM_BALLS = 10;
 const BALL_RADIUS = 10;
-let simulationSpeed = 1;
+let slopeAngle = 0; // Angle of the slope
 
 function setup() {
     createCanvas(800, 100);
@@ -77,6 +77,10 @@ class Ball {
     }
 
     update() {
+        const a = 0.1;  // You can change this value to set the strength of the force
+        let accelerationDueToSlope = a / tan(0.5);
+        this.acceleration.x += accelerationDueToSlope;
+
         this.velocity.add(this.acceleration);
         this.position.add(this.velocity);
         this.acceleration.mult(0);
