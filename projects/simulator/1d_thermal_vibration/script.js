@@ -1,12 +1,12 @@
 let balls = [];
-const NUM_BALLS = 100;
-const BALL_RADIUS = 10;
+const NUM_BALLS = 60;
+const BALL_RADIUS = 5;
 let slopeAngle = 0; // Angle of the slope
 let isPlaying = true; // 再生中かどうかのフラグ
 
 
 function setup() {
-    createCanvas(800, 100);
+    createCanvas(800, 800);
     for (let i = 0; i < NUM_BALLS; i++) {
         balls.push(new Ball(random(BALL_RADIUS, width - BALL_RADIUS), height / 2, BALL_RADIUS));
     }
@@ -33,15 +33,18 @@ function setup() {
 
 function draw() {
   background(220);
+  translate(width / 2, height / 2); // Move to center of canvas
+  rotate(PI / 4); // Rotate by 45 degrees
+  translate(-width / 2, -height / 2); // Move back
+
   if (isPlaying) {
       balls.forEach(ball => {
           ball.checkCollision(balls);
           ball.update();
       });
   }
-  balls.forEach(ball => ball.display()); // 常にボールを表示します
+  balls.forEach(ball => ball.display());
 }
-
 
 function togglePlayPause() {
   isPlaying = !isPlaying;
@@ -93,22 +96,33 @@ class Ball {
     }
 
     update() {
-        const a = 0.1;  // You can change this value to set the strength of the force
-        let accelerationDueToSlope = a / tan(0.5);
-        this.acceleration.x += accelerationDueToSlope;
+      const a = 0.001; 
+      let accelerationDueToSlope = a / tan(0.5);
+      this.acceleration.x += accelerationDueToSlope;
 
-        this.velocity.add(this.acceleration);
-        this.position.add(this.velocity);
-        this.acceleration.mult(0);
+      this.velocity.add(this.acceleration);
+      this.position.add(this.velocity);
+      this.acceleration.mult(0);
 
-        if (this.position.x > width - this.radius) {
+      let boundary = sqrt((width * width) + (height * height));
+      if (this.position.x > boundary - this.radius) {
           this.velocity.x *= -1;
-          this.position.x = width - this.radius;
+          this.position.x = boundary - this.radius;
       } else if (this.position.x < this.radius) {
           this.velocity.x *= -1;
           this.position.x = this.radius;
       }
+      
+      if (this.position.x > width - this.radius) {
+        this.velocity.x *= -1;
+        this.position.x = width - this.radius;
+    } else if (this.position.x < this.radius) {
+        this.velocity.x *= -1;
+        this.position.x = this.radius;
     }
+
+  }
+
 
     display() {
         fill(127);
