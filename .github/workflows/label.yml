@@ -1,0 +1,37 @@
+name: Auto PR Creation
+
+on:
+  push:
+    branches-ignore:
+      - 'main' # ベースブランチ (ここではmainとしていますが、必要に応じて変更してください)
+
+jobs:
+  create_pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 # コミット履歴を全て取得するために必要
+
+      - name: Setup GitHub CLI
+        run: |
+          sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-key C99B11DEB97541F0
+          sudo apt-add-repository https://cli.github.com/packages
+          sudo apt update
+          sudo apt install gh
+
+      # PRがすでに存在していないかのチェック
+      - name: Check if PR already exists
+        id: check_pr
+        run: |
+          echo "count=$(gh pr list -B main -H ${{ github.ref }} --json 'id' -q '.[] | length')" >> $GITHUB_ENV
+
+      # PRが存在しない場合、新しいPRを作成
+      - name: Create Pull Request
+        if: env.count == '0'
+        run: |
+          gh pr create --title "Update from ${{ github.actor }}" --body "This PR is automatically created by GitHub Actions." --base main --head ${{ github.ref }} --assignee ${{ github.actor }}
+
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
