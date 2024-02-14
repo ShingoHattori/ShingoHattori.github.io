@@ -1,3 +1,5 @@
+<link href="https://raw.githubusercontent.com/simonlc/Markdown-CSS/master/markdown.css" rel="stylesheet"></link>
+
 # このページの動き方
 
 このページは，GitHub Actionによってビルドとデプロイがなされ，GitHub Pagesによって公開されています．
