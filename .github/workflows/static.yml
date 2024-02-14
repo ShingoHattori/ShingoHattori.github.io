@@ -47,15 +47,18 @@ jobs:
       - name: Insert converted HTML to index.html
         run: |
           rm -f articles.html && \
-          for file in articles/html/*.html; do
+          cd articles/html
+          for file in *.html; do
               cat >> articles.html <<EOF
               <ul>
                 <li>
-                  <a href=./$file>article</a>
+                  <a href=./articles/html/$file>article</a>
                 </li>
               </ul>
           EOF
           done && \
+          cd ../../ && \
+          mv articles/html/articles.html ./ && \
           sed '/#PLACEHOLDER_REPLACED_BY_CI/{
           r articles.html
           d
