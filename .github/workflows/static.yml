@@ -49,10 +49,11 @@ jobs:
           rm -f articles.html && \
           cd articles/html
           for file in *.html; do
+              article_name=$(echo "$file" | sed -e 's/^[0-9]\{8\}_//' -e 's/\.html$//')
               cat >> articles.html <<EOF
               <ul>
                 <li>
-                  <a href=./articles/html/$file>article</a>
+                  <a href=./articles/html/$file>$article_name</a>
                 </li>
               </ul>
           EOF
