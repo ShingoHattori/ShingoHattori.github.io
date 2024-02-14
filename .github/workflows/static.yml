@@ -35,7 +35,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y pandoc
-      - name: Convert Markdown to HTML
+      - name: Convert Markdown to HTML and move
         run: |
           cd articles/markdown && \
           for file in *.md; do
@@ -43,6 +43,23 @@ jobs:
           done && \
           mkdir ../html && \
           mv *.html ../html/
+
+      - name: Insert converted HTML to index.html
+        run: |
+        rm -f articles.html && \
+        for file in articles/html/*.md; do
+            cat >> articles.html <<EOF
+            <li>
+            <a href=./$file>article</a>
+            </li>
+        EOF
+        done && \
+        sed '/#PLACEHOLDER_REPLACED_BY_CI/{
+        r articles.html
+        d
+        }' index.html > temp_index.html && \
+        mv temp_index.html index.html
+
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
