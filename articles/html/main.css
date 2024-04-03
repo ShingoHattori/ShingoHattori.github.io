@@ -150,6 +150,11 @@
   body figure {
     display: block;
   }
+
+  body {
+    padding-left: 20px;
+}
+
   
   body summary {
     display: list-item;
