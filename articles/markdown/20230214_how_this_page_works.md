@@ -1,4 +1,4 @@
-<link href="https://raw.githubusercontent.com/simonlc/Markdown-CSS/master/markdown.css" rel="stylesheet"></link>
+<link href="./main.css" rel="stylesheet"></link>
 
 # このページの動き方
 
