@@ -46,7 +46,7 @@ jobs:
 
       - name: Insert converted HTML to index.html
         run: |
-          rm -f articles.html && \
+          rm -f articles/html/articles.html && \
           cd articles/html
           for file in *.html; do
               article_name=$(echo "$file" | sed -e 's/^[0-9]\{8\}_//' -e 's/\.html$//')
