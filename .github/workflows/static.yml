@@ -41,7 +41,7 @@ jobs:
           for file in *.md; do
             pandoc "$file" -o "${file%.md}.html"
           done && \
-          mkdir ../html && \
+          mkdir -p ../html && \
           mv *.html ../html/
 
       - name: Insert converted HTML to index.html
