@@ -1,78 +1,120 @@
-
 <!DOCTYPE html>
 <html lang=en>
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="icon" type="image/png" href="./image/osm.png" sizes="128x128">
-<title>Shingo Hattori</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="./image/osm.png" sizes="128x128">
+  <title>Shingo Hattori</title>
 
-<style>
-/*I am new to writing CSS and HTML, so this document may contain incorrect syntax. If you find any, please make a pull request.*/  
-
-
-p{
-    line-height: 1.8;
-    font-size: 16px;
-    text-align:left;
-    padding: 0 25px;
-}
-
-heading{
-    line-height: 1.8;
-    font-size: 25px;
-    text-align:left;
-}
-
-body{
-    padding: 0 25px;
-    font-family: Consolas,monospace;
-    text-align:left;
-}
+  <style>
+    /*I am new to writing CSS and HTML, so this document may contain incorrect syntax. If you find any, please make a pull request.*/
 
 
-pre.aa{
-    font-family: 'Courier New', Courier, monospace;
-    white-space: pre;
-    font-weight:bold;
-    font-size: 3px;
-    line-height: 4.5px;
-    margin: 2px 10px 0px 2px;
-}
-pre.text{
-    font-family: 'Courier New', Courier, monospace;
-    white-space: pre;
-    font-size: 18px;
-    line-height: 20px;
-}
-
-.wrap{
-    padding: 0 -5px;
-    display:flex;
-}
-
-@media screen and (max-width:480px){
-    /*for mobile*/
-    .wrap{
-	display:block;
+    .publications-table {
+      width: 100%;
+      border-collapse: collapse;
     }
-}
 
-.pub td{
+    .publication-category th {
+      text-align: left;
+      padding: 10px 0;
+      border-bottom: 2px solid #ddd;
+    }
 
-    vertical-align: top;
-}
+    .publication-item td {
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+    }
 
-</style>
+    .article-title {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .magazine-info {
+      font-style: italic;
+      color: #666;
+    }
+
+    .magazine-info a {
+      text-decoration: none;
+      color: #0066cc;
+    }
+
+    .magazine-info a:hover {
+      text-decoration: underline;
+    }
+
+    .publication-date {
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    p {
+      line-height: 1.8;
+      font-size: 16px;
+      text-align: left;
+      padding: 0 25px;
+    }
+
+    heading {
+      line-height: 1.8;
+      font-size: 25px;
+      text-align: left;
+    }
+
+    body {
+      padding: 0 25px;
+      font-family: Consolas, monospace;
+      text-align: left;
+    }
+
+
+    pre.aa {
+      font-family: 'Courier New', Courier, monospace;
+      white-space: pre;
+      font-weight: bold;
+      font-size: 3px;
+      line-height: 4.5px;
+      margin: 2px 10px 0px 2px;
+    }
+
+    pre.text {
+      font-family: 'Courier New', Courier, monospace;
+      white-space: pre;
+      font-size: 18px;
+      line-height: 20px;
+    }
+
+    .wrap {
+      padding: 0 -5px;
+      display: flex;
+    }
+
+    @media screen and (max-width:480px) {
+
+      /*for mobile*/
+      .wrap {
+        display: block;
+      }
+    }
+
+    .pub td {
+
+      vertical-align: top;
+    }
+  </style>
 
 </head>
+
 <body>
   <div class="wrap">
     <div>
       <p hidden>Ascii art of my selfie is here (skipped)</p>
       <pre class="aa" aria-hidden="true">
 
-                                                                                                    
+
                      ..::.                   ..::^^^^^^^^^:..                                       
                 .^^^^^^~!777^          :^~!777!!!~~^^~~~~!!77??7!~:.                                
               ^!7777777!!~::7Y:   .^!77!~^:.                  ..^~!77!^.                            
@@ -130,104 +172,161 @@ pre.text{
     </div>
     <div>
       <table>
-	<tr><td>shatto@earth</td></tr>
-	<tr><td>------------</td></tr>
-	<tr><td>Name: Shingo Hattori</td></tr>
-	<tr><td>Uptime: 21yr and more</td></tr>
-	<tr><td>Lang: Japanese/English</td></tr>
-	<tr><td>Location: Tsukuba, Japan</td></tr>
-	<tr><td>Affiriation: University of Tsukuba</td></tr>
-	<tr><td>- College of Media Arts,Science and Technology (Udergraduate Student)</td></tr>
-	<tr><td>- Academic Collaboration Promotional Laboratory (Member)</td></tr>
-	<tr><td>- Software And Security Laboratory (Member)</td></tr>
-	<tr><td>- Cluster Metaverse Lab (RA/Internship)</td></tr>
-	
+        <tr>
+          <td>shatto@earth</td>
+        </tr>
+        <tr>
+          <td>------------</td>
+        </tr>
+        <tr>
+          <td>Name: Shingo Hattori</td>
+        </tr>
+        <tr>
+          <td>Uptime: 21yr and more</td>
+        </tr>
+        <tr>
+          <td>Lang: Japanese/English</td>
+        </tr>
+        <tr>
+          <td>Location: Tsukuba, Japan</td>
+        </tr>
+        <tr>
+          <td>Affiriation: University of Tsukuba</td>
+        </tr>
+        <tr>
+          <td>- College of Media Arts,Science and Technology (Udergraduate Student)</td>
+        </tr>
+        <tr>
+          <td>- Academic Collaboration Promotional Laboratory (Member)</td>
+        </tr>
+        <tr>
+          <td>- Software And Security Laboratory (Member)</td>
+        </tr>
+        <tr>
+          <td>- Cluster Metaverse Lab (RA/Internship)</td>
+        </tr>
+
       </table>
     </div>
   </div>
-  
+
   <br><br>
   <div>
     <heading>Current Efforts</heading>
     <ul>
       <li>
-	Advanced programming classes for middle and high school students. Papers are available <a href="https://booth.pm/ja/items/4084427">here</a>, <a href="https://booth.pm/ja/items/4434270">here</a> and  <a href="https://highschl.educa.nagoya-u.ac.jp/4821/">here</a>.
+        Advanced programming classes for middle and high school students. Papers are available <a
+          href="https://booth.pm/ja/items/4084427">here</a>, <a href="https://booth.pm/ja/items/4434270">here</a> and <a
+          href="https://highschl.educa.nagoya-u.ac.jp/4821/">here</a>.
       </li>
 
       <li>
-	Construction of a L2VPN network that does not depend on a single location.
+        Construction of a L2VPN network that does not depend on a single location.
       </li>
 
       <li>
-	Inexpensive construction and improvement of computer environments used in advanced programming education.
+        Inexpensive construction and improvement of computer environments used in advanced programming education.
       </li>
     </ul>
 
   </div>
-  
+
   <div>
-    <heading>Publication and Awards</heading>
+    <heading>Publication</heading>
     <table class="pub">
       <tr>
-	<td>Conference Papers:</td>
-	<td>画像解析によるブロック塀と点字ブロックの識別</td>
+        <td>Conference Papers:</td>
+        <td>画像解析によるブロック塀と点字ブロックの識別</td>
       </tr>
       <tr>
-	<td></td>
-	<td>Japan Science & Engineering Challenge 2019.</td>
-      </tr>
-      
-      <tr>
-	<td>Conference Papers:</td>
-	<td>画像解析によるブロック塀と点字ブロックの識別 ーハザードマップの自動作成と視覚障害者の歩行支援ー</td>
-      </tr>
-      <tr>
-	<td></td>
-	<td>Information Processing Society of Japan 82nd National Convention Junior Contest.</td>
-      </tr>
-      
-      <tr>
-	<td>Conference Papers:</td>
-	<td>映像への情報重畳のための不可視の色振動の探索高速化と生成可能条件の基礎検討</td>
-      </tr>
-      <tr>
-	<td></td>
-	<td><a href="http://id.nii.ac.jp/1001/00221382/"> Information Processing Society of Japan 84th National Convention Student Session.</a></td>
+        <td></td>
+        <td>Japan Science & Engineering Challenge 2019.</td>
       </tr>
 
       <tr>
-	<td>Poster:</td>
-	<td>Accelerated and Optimized Search of Imperceptible Color Vibration for Embedding Information into LCD images.</td>
+        <td>Conference Papers:</td>
+        <td>画像解析によるブロック塀と点字ブロックの識別 ーハザードマップの自動作成と視覚障害者の歩行支援ー</td>
       </tr>
       <tr>
-	<td></td>
-	<td><a href="https://dl.acm.org/doi/abs/10.1145/3550082.3564190">SIGGRAPH Asia 2022.</a></td>
-      </tr>
-
-      <tr>
-	<td>Poster:</td>
-	<td>世界の食文化に触れてみよう会 活動報告</td>
-      </tr>
-      <tr>
-	<td></td>
-	<td> <a href="https://www.t-act.tsukuba.ac.jp/project/view/?seq=601"> T-ACT Welcome Fest 2023 －つくばアクションプロジェクト新入生歓迎会・活動報告会－</a></td>
+        <td></td>
+        <td>Information Processing Society of Japan 82nd National Convention Junior Contest.</td>
       </tr>
 
       <tr>
-    <td>Poster:</td>
-    <td>Measurement of the Imperceptible Threshold for Color Vibration Pairs Selected by using MacAdam Ellipse.</td>
-        </tr>
-        <tr>
-    <td></td>
-    <td><a href="https://dl.acm.org/doi/10.1145/3641234.3671041">SIGGRAPH 2024.</a></td>
+        <td>Conference Papers:</td>
+        <td>映像への情報重畳のための不可視の色振動の探索高速化と生成可能条件の基礎検討</td>
+      </tr>
+      <tr>
+        <td></td>
+        <td><a href="http://id.nii.ac.jp/1001/00221382/"> Information Processing Society of Japan 84th National
+            Convention Student Session.</a></td>
+      </tr>
+
+      <tr>
+        <td>Poster:</td>
+        <td>Accelerated and Optimized Search of Imperceptible Color Vibration for Embedding Information into LCD images.
+        </td>
+      </tr>
+      <tr>
+        <td></td>
+        <td><a href="https://dl.acm.org/doi/abs/10.1145/3550082.3564190">SIGGRAPH Asia 2022.</a></td>
+      </tr>
+
+      <tr>
+        <td>Poster:</td>
+        <td>世界の食文化に触れてみよう会 活動報告</td>
+      </tr>
+      <tr>
+        <td></td>
+        <td> <a href="https://www.t-act.tsukuba.ac.jp/project/view/?seq=601"> T-ACT Welcome Fest 2023
+            －つくばアクションプロジェクト新入生歓迎会・活動報告会－</a></td>
+      </tr>
+
+      <tr>
+        <td>Poster:</td>
+        <td>Measurement of the Imperceptible Threshold for Color Vibration Pairs Selected by using MacAdam Ellipse.</td>
+      </tr>
+      <tr>
+        <td></td>
+        <td><a href="https://dl.acm.org/doi/10.1145/3641234.3671041">SIGGRAPH 2024.</a></td>
+      </tr>
+
+      <tr>
+        <td>Magazine Articles:</td>
+        <td>博士号回収記録</td>
+      </tr>
+      <tr>
+        <td></td>
+        <td><a href="https://www.word-ac.net/post/2022/0605-word51/">WORD51号「WORD は大学新聞の学内誌特集からハブられました号」</a> June, 2022
+        </td>
+      </tr>
+
+      <tr>
+        <td>Magazine Articles:</td>
+        <td>大学内で世界一臭い缶詰を合法的に開けた話</td>
+      </tr>
+      <tr>
+        <td></td>
+        <td><a href="https://www.word-ac.net/post/2023/1225-word54/">WORD54号「WORD 編集部は除草剤を撒いていません号」</a> December, 2023
+        </td>
+      </tr>
+
+
+      <tr>
+        <td>Magazine Articles:</td>
+        <td>駐車場で事故ったときの処理方法　令和最新版</td>
+      </tr>
+      <tr>
+        <td></td>
+        <td><a href="https://www.word-ac.net/post/2024/0409-iwai2024/">WORD入学祝い号2024</a> April, 2024</td>
       </tr>
 
     </table>
   </div>
 
   <div>
-      <heading>Jobs</heading>
-      <table class="pub">
+    <heading>Jobs</heading>
+    <table class="pub">
       <tr>
         <td>Assitant:</td>
         <td>2021/04~ </td>
@@ -257,57 +356,67 @@ pre.text{
         <td>2023/08~ </td>
         <td>Cluster Metaverse Lab</td>
       </tr>
-      </table>
-    </div>
-  
+    </table>
+  </div>
+
   <div>
     <heading>Contents on this site</heading>
     <ul>
       <li>
-	<a href="./projects/simulator/1d_thermal_vibration/index.html">1D Physics Simulator</a> : In one dimension, numerous perfectly elastic balls are subjected to random forces (thermal fluctuations). Due to this, the balls collide with their neighbors and reflect, resulting in a back-and-forth motion within a specific range. When placed on a slope, in two or three dimensions, the balls tend to accumulate at the bottom due to the energy inefficiency of moving uphill. As a result, fewer balls are observed at higher altitudes, demonstrating an exponential decline known as "thermal activation" or the "Boltzmann distribution." However, in a one-dimensional scenario, the balls cannot slip past each other, and it's hypothesized that the average distance (or density) between the balls remains constant regardless of their position on the slope. This simulator was developed to validate this hypothesis.
+        <a href="./projects/simulator/1d_thermal_vibration/index.html">1D Physics Simulator</a> : In one dimension,
+        numerous perfectly elastic balls are subjected to random forces (thermal fluctuations). Due to this, the balls
+        collide with their neighbors and reflect, resulting in a back-and-forth motion within a specific range. When
+        placed on a slope, in two or three dimensions, the balls tend to accumulate at the bottom due to the energy
+        inefficiency of moving uphill. As a result, fewer balls are observed at higher altitudes, demonstrating an
+        exponential decline known as "thermal activation" or the "Boltzmann distribution." However, in a one-dimensional
+        scenario, the balls cannot slip past each other, and it's hypothesized that the average distance (or density)
+        between the balls remains constant regardless of their position on the slope. This simulator was developed to
+        validate this hypothesis.
       </li>
     </ul>
     #PLACEHOLDER_REPLACED_BY_CI
   </div>
   <div>
 
-  <div>
-    <heading>Interests</heading>
-    <ul>
-      <li>
-	Creating network with Used professional products and handmade software.
-      </li>
-      <li>
-	Human-computer interaction, especially visual and tactile.
-      </li>
-      <li>
-	Advanced programming education.
-      </li>
-      <li>
-	Splatoon (1:S+99, 2:All S+, not X, due to college classes, 3:Haven't bought yet)
-      </li>
-    </ul>
-  </div>
-  <div>
-    <heading>Contacts</heading>
-    <p>First charactor of my given name (lower case) + First to fifth letter of last name (lower case) @ this domain</p>
+    <div>
+      <heading>Interests</heading>
+      <ul>
+        <li>
+          Creating network with Used professional products and handmade software.
+        </li>
+        <li>
+          Human-computer interaction, especially visual and tactile.
+        </li>
+        <li>
+          Advanced programming education.
+        </li>
+        <li>
+          Splatoon (1:S+99, 2:All S+, not X, due to college classes, 3:Haven't bought yet)
+        </li>
+      </ul>
+    </div>
+    <div>
+      <heading>Contacts</heading>
+      <p>First charactor of my given name (lower case) + First to fifth letter of last name (lower case) @ this domain
+      </p>
 
-    <p>The number of characters before @ should be 6 and after @ should be 8.</p>
+      <p>The number of characters before @ should be 6 and after @ should be 8.</p>
 
-  </div>
+    </div>
 
-  <div>
+    <div>
       <heading>Cross Links</heading>
       <p>We are welcome cross-links.</p>
-  
+
     </div>
-  
+
     <ul>
       <li>
-	<a href="https://eniehack.net/~eniehack">Nakaya</a>
+        <a href="https://eniehack.net/~eniehack">Nakaya</a>
       </li>
 
     </ul>
-  
+
 </body>
+
 </html>
