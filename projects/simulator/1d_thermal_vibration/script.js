@@ -77,34 +77,46 @@ slider_velocity.noUiSlider.on('update', function(values) {
   }
 });
 
-    document.getElementById('ball-count').addEventListener('change', function() {
-        let newCount = int(this.value);
-        
-        // ボールを増やす場合
-        while (balls.length < newCount) {
-          let newBall = new Ball(random(BALL_RADIUS, width - BALL_RADIUS), height / 2, BALL_RADIUS);
-          balls.push(newBall);
-          originalVelocities.push(createVector(newBall.velocity.x, newBall.velocity.y));
-        }
-        
-        // ボールを減らす場合
-        while (balls.length > newCount) {
-          balls.pop();
-          originalVelocities.pop();
-        }
-      });
+// ボール数変更イベントリスナー
+document.getElementById('ball-count').addEventListener('change', function() {
+    let newCount = int(this.value);
+    NUM_BALLS = newCount; // NUM_BALLSを更新
+    
+    // ボールを増やす場合
+    while (balls.length < newCount) {
+      let newBall = new Ball(random(BALL_RADIUS, width - BALL_RADIUS), height / 2, BALL_RADIUS);
+      balls.push(newBall);
+      originalVelocities.push(createVector(newBall.velocity.x, newBall.velocity.y));
+    }
+    
+    // ボールを減らす場合
+    while (balls.length > newCount) {
+      balls.pop();
+      originalVelocities.pop();
+    }
+  });
 
-    document.getElementById('ball-radius').addEventListener('change', function() {
+// ボール半径変更イベントリスナー
+document.getElementById('ball-radius').addEventListener('change', function() {
     BALL_RADIUS = int(this.value);
+    let currentBallCount = balls.length; // 現在のボール数を保存
+    
     balls = [];
     originalVelocities = []; // 元の速度配列もクリア
     
-    for (let i = 0; i < NUM_BALLS; i++) {
-        let newBall = new Ball(random(BALL_RADIUS, width - BALL_RADIUS), height / 2, BALL_RADIUS);
-        balls.push(newBall);
-        originalVelocities.push(createVector(newBall.velocity.x, newBall.velocity.y));
+    // 現在のボール数を使用して新しいボールを作成
+    for (let i = 0; i < currentBallCount; i++) {
+      let newBall = new Ball(random(BALL_RADIUS, width - BALL_RADIUS), height / 2, BALL_RADIUS);
+      balls.push(newBall);
+      originalVelocities.push(createVector(newBall.velocity.x, newBall.velocity.y));
     }
-    });
+    
+    // NUM_BALLSも更新して一貫性を保つ
+    NUM_BALLS = currentBallCount;
+    
+    // ボール数入力フィールドも更新
+    document.getElementById('ball-count').value = currentBallCount;
+  });
 
 
     let playPauseButton = select('#playPauseButton');
