@@ -41,9 +41,9 @@
             margin-bottom: 10px;
         }
 
-label {
-    margin-right: 10px;
-}
+        label {
+            margin-right: 10px;
+        }
         #playPauseButton {
             padding: 10px 20px;
             border: none;
@@ -68,6 +68,14 @@ label {
         <div class="slider-title">下方向の加速度を調整</div>
         <div id="slider_gravity"></div>
         <div class="current-value" id="gravity-value">現在の重力: 0</div>
+    </div>
+    <div class="slider-container">
+        <div class="slider-title">速度の倍率を調整</div>
+        <div id="slider_velocity"></div>
+        <div class="current-value" id="velocity-value">現在の速度倍率: 1.00</div>
+    </div>
+    <div class="info-container">
+        <div id="average-velocity">平均速度: 0.00</div>
     </div>
     <div class="input-container">
         <label for="ball-count">球の数：</label>

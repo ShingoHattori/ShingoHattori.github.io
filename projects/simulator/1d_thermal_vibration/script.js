@@ -1,4 +1,6 @@
 let balls = [];
+let velocityMultiplier = 1.0; // デフォルトの速度倍率
+let originalVelocities = []; // 元の速度を保存する配列
 let NUM_BALLS = 6;
 let BALL_RADIUS = 5;
 let slopeAngle = 0; // Angle of the slope
@@ -43,23 +45,66 @@ function setup() {
   document.getElementById('gravity-value').innerText = `現在の重力: ${gravity.toFixed(2)}`;
   });
 
-  document.getElementById('ball-count').addEventListener('change', function() {
-    let newCount = int(this.value);
-    while (balls.length < newCount) {
-        balls.push(new Ball(random(BALL_RADIUS, width - BALL_RADIUS), height / 2, BALL_RADIUS));
-    }
-    while (balls.length > newCount) {
-        balls.pop();
-    }
-  });
+// 速度調整用スライダーの作成
+let slider_velocity = document.getElementById('slider_velocity');
+noUiSlider.create(slider_velocity, {
+  start: [0],       // デフォルトは0（中央）で10^0 = 1倍
+  range: {
+      'min': [-1],  // 最小-1で10^-1 = 0.1倍
+      'max': [1]    // 最大1で10^1 = 10倍
+  },
+  connect: true,    // レンジバーを表示
+  step: 0.01,
+  orientation: 'horizontal'
+});
 
-  document.getElementById('ball-radius').addEventListener('change', function() {
+// 元の速度を保存
+for (let ball of balls) {
+  originalVelocities.push(createVector(ball.velocity.x, ball.velocity.y));
+}
+
+slider_velocity.noUiSlider.on('update', function(values) {
+  let sliderValue = parseFloat(values[0]);
+  
+  // 10の冪乗で計算（10^sliderValue）
+  velocityMultiplier = Math.pow(10, sliderValue);
+  
+  document.getElementById('velocity-value').innerText = `現在の速度倍率: ${velocityMultiplier.toFixed(2)}`;
+  
+  // 全てのボールの速度を更新
+  for (let i = 0; i < balls.length; i++) {
+    balls[i].velocity.x = originalVelocities[i].x * velocityMultiplier;
+  }
+});
+
+    document.getElementById('ball-count').addEventListener('change', function() {
+        let newCount = int(this.value);
+        
+        // ボールを増やす場合
+        while (balls.length < newCount) {
+          let newBall = new Ball(random(BALL_RADIUS, width - BALL_RADIUS), height / 2, BALL_RADIUS);
+          balls.push(newBall);
+          originalVelocities.push(createVector(newBall.velocity.x, newBall.velocity.y));
+        }
+        
+        // ボールを減らす場合
+        while (balls.length > newCount) {
+          balls.pop();
+          originalVelocities.pop();
+        }
+      });
+
+    document.getElementById('ball-radius').addEventListener('change', function() {
     BALL_RADIUS = int(this.value);
     balls = [];
+    originalVelocities = []; // 元の速度配列もクリア
+    
     for (let i = 0; i < NUM_BALLS; i++) {
-        balls.push(new Ball(random(BALL_RADIUS, width - BALL_RADIUS), height / 2, BALL_RADIUS));
+        let newBall = new Ball(random(BALL_RADIUS, width - BALL_RADIUS), height / 2, BALL_RADIUS);
+        balls.push(newBall);
+        originalVelocities.push(createVector(newBall.velocity.x, newBall.velocity.y));
     }
-  });
+    });
 
 
     let playPauseButton = select('#playPauseButton');
@@ -84,6 +129,14 @@ function draw() {
       });
   }
   balls.forEach(ball => ball.display());
+
+  // 平均速度の計算と表示
+  let totalVelocity = 0;
+  for (let ball of balls) {
+    totalVelocity += abs(ball.velocity.x); // x方向の速度の絶対値
+  }
+  let avgVelocity = totalVelocity / balls.length;
+  document.getElementById('average-velocity').innerText = `平均速度: ${avgVelocity.toFixed(2)}`;
 }
 
 function togglePlayPause() {
@@ -99,6 +152,7 @@ class Ball {
     constructor(x, y, r) {
         this.position = createVector(x, y);
         this.velocity = createVector(random(-2, 2), 0);
+        this.originalVelocity = createVector(this.velocity.x, this.velocity.y); // 元の速度を保存
         this.acceleration = createVector();
         this.radius = r;
     }
