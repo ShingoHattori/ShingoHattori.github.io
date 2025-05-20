@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>白黒交互表示アプリ</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        
+        header {
+            background-color: #333;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+        }
+        
+        main {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+        
+        #square-container {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            border: 1px solid #ccc;
+        }
+        
+        #square {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-color: rgb(105, 190, 107);
+            cursor: none; /* カーソルを非表示にする */
+        }
+        
+        footer {
+            background-color: #333;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+        }
+        
+        .controls {
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        button {
+            padding: 8px 16px;
+            margin: 0 5px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        .info {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>白黒交互表示アプリ</h1>
+        <p>60FPSでの白黒切り替えデモ</p>
+    </header>
+    
+    <main>
+        <div>
+            <div id="square-container">
+                <div id="square"></div>
+            </div>
+            <div class="controls">
+                <button id="start-stop">一時停止</button>
+                <button id="change-size">サイズ変更</button>
+            </div>
+            <div class="info">
+                <p>現在のFPS: <span id="fps-counter">60</span></p>
+                <p>状態: <span id="status">実行中</span></p>
+            </div>
+        </div>
+    </main>
+    
+    <footer>
+        <p>&copy; 2025 白黒交互表示アプリ - すべての権利を留保</p>
+    </footer>
+    
+    <script>
+        // DOMが読み込まれたら実行
+        document.addEventListener('DOMContentLoaded', function() {
+            const square = document.getElementById('square');
+            const startStopButton = document.getElementById('start-stop');
+            const changeSizeButton = document.getElementById('change-size');
+            const fpsCounter = document.getElementById('fps-counter');
+            const statusElement = document.getElementById('status');
+            
+            let isWhite = false;
+            let isRunning = true;
+            let lastFrameTime = performance.now();
+            let frameCount = 0;
+            let lastFpsUpdateTime = performance.now();
+            let sizes = [200, 150, 100, 250, 300];
+            let currentSizeIndex = 0;
+            
+            // 正確に60FPSで動作するためのタイムステップ (16.67ms ≈ 1000ms/60)
+            const frameInterval = 1000 / 60;
+            
+            // 60FPSでのアニメーション
+            function animate(timestamp) {
+                if (!isRunning) return;
+                
+                // 現在時刻の取得
+                const now = performance.now();
+                const elapsed = now - lastFrameTime;
+                
+                // フレームカウントの更新（FPS計測用）
+                frameCount++;
+                
+                // 1秒ごとにFPSを更新
+                if (now - lastFpsUpdateTime >= 1000) {
+                    const fps = Math.round(frameCount * 1000 / (now - lastFpsUpdateTime));
+                    fpsCounter.textContent = fps;
+                    frameCount = 0;
+                    lastFpsUpdateTime = now;
+                }
+                
+                // 16.67ms (60FPS)ごとに色を切り替え
+                if (elapsed >= frameInterval) {
+                    // 色の切り替え
+                    isWhite = !isWhite;
+                    square.style.backgroundColor = isWhite ? 'rgb(105, 190, 107)' : 'rgb(147, 173, 189)';
+                    
+                    // 時間を更新（複数のフレームをスキップした場合でも一定のインターバルを維持）
+                    lastFrameTime = now - (elapsed % frameInterval);
+                }
+                
+                // 次のフレームの要求
+                requestAnimationFrame(animate);
+            }
+            
+            // アニメーションの開始
+            requestAnimationFrame(animate);
+            
+            // 開始/停止ボタンのイベントリスナー
+            startStopButton.addEventListener('click', function() {
+                isRunning = !isRunning;
+                if (isRunning) {
+                    startStopButton.textContent = '一時停止';
+                    statusElement.textContent = '実行中';
+                    requestAnimationFrame(animate);
+                } else {
+                    startStopButton.textContent = '開始';
+                    statusElement.textContent = '停止中';
+                }
+            });
+            
+            // サイズ変更ボタンのイベントリスナー
+            changeSizeButton.addEventListener('click', function() {
+                currentSizeIndex = (currentSizeIndex + 1) % sizes.length;
+                const newSize = sizes[currentSizeIndex];
+                document.getElementById('square-container').style.width = newSize + 'px';
+                document.getElementById('square-container').style.height = newSize + 'px';
+            });
+        });
+    </script>
+</body>
+</html>
