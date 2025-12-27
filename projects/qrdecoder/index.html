@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Decoder</title>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <style>
+        body { max-width: 800px; margin: 2rem auto; padding: 0 1rem; font-family: sans-serif; }
+        .section { margin: 2rem 0; padding: 1rem; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 0.5rem 1rem; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin: 0.25rem; }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .result { margin-top: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 4px; word-break: break-all; }
+        .drop-zone {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.3s, background-color 0.3s;
+            min-height: 150px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .drop-zone:hover, .drop-zone.dragover { border-color: #007bff; background-color: #f0f7ff; }
+        .drop-zone img { max-width: 100%; max-height: 300px; margin-top: 1rem; }
+        .preview-container { margin-top: 1rem; }
+        canvas { display: none; }
+        .copy-success { color: #28a745; font-size: 0.9rem; margin-left: 0.5rem; }
+        .error { color: #dc3545; }
+        .info { color: #666; font-size: 0.9rem; }
+        .result-text {
+            font-family: monospace;
+            white-space: pre-wrap;
+            background: #fff;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 0.5rem 0;
+        }
+        .multiple-results { margin-top: 1rem; }
+        .multiple-results .qr-item {
+            padding: 0.5rem;
+            margin: 0.5rem 0;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .multiple-results .qr-item:hover { background: #f8f9fa; }
+    </style>
+</head>
+<body>
+    <h1>QR Code Decoder</h1>
+
+    <div class="section">
+        <h2>画像をペースト・ドロップ・選択</h2>
+        <div class="drop-zone" id="dropZone">
+            <p>クリップボードから Ctrl+V / Cmd+V でペースト</p>
+            <p>または画像をドラッグ＆ドロップ</p>
+            <p>またはクリックしてファイルを選択</p>
+            <input type="file" id="fileInput" accept="image/*" style="display: none;">
+        </div>
+        <div class="preview-container">
+            <img id="preview" style="display: none;">
+            <canvas id="canvas"></canvas>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>デコード結果</h2>
+        <div id="result" class="result">
+            <p class="info">画像をペーストまたはドロップすると、QRコードを検出してデコードします。</p>
+        </div>
+        <div id="actions" style="display: none; margin-top: 1rem;">
+            <button onclick="copyResult()">結果をコピー</button>
+            <button onclick="clearAll()">クリア</button>
+            <span id="copyStatus" class="copy-success" style="display: none;">コピーしました</span>
+        </div>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const preview = document.getElementById('preview');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const resultDiv = document.getElementById('result');
+        const actionsDiv = document.getElementById('actions');
+        const copyStatus = document.getElementById('copyStatus');
+
+        let decodedData = [];
+
+        // ペースト
+        document.addEventListener('paste', (e) => {
+            const items = e.clipboardData?.items;
+            if (!items) return;
+
+            for (const item of items) {
+                if (item.type.startsWith('image/')) {
+                    e.preventDefault();
+                    const blob = item.getAsFile();
+                    processImage(blob);
+                    return;
+                }
+            }
+        });
+
+        // ドラッグ＆ドロップ
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                processImage(file);
+            }
+        });
+
+        // クリックでファイル選択
+        dropZone.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                processImage(file);
+            }
+        });
+
+        function processImage(blob) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                    decodeQR(img);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(blob);
+        }
+
+        function decodeQR(img) {
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+            if (code) {
+                decodedData = [code.data];
+                showResult(code.data);
+            } else {
+                // 複数回試行（異なるスケールで）
+                const scales = [0.5, 2, 1.5, 0.75];
+                let found = false;
+
+                for (const scale of scales) {
+                    const scaledWidth = Math.floor(img.width * scale);
+                    const scaledHeight = Math.floor(img.height * scale);
+
+                    canvas.width = scaledWidth;
+                    canvas.height = scaledHeight;
+                    ctx.drawImage(img, 0, 0, scaledWidth, scaledHeight);
+
+                    const scaledData = ctx.getImageData(0, 0, scaledWidth, scaledHeight);
+                    const scaledCode = jsQR(scaledData.data, scaledData.width, scaledData.height);
+
+                    if (scaledCode) {
+                        decodedData = [scaledCode.data];
+                        showResult(scaledCode.data);
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found) {
+                    decodedData = [];
+                    showError('QRコードが見つかりませんでした。画像を確認してください。');
+                }
+            }
+        }
+
+        function showResult(data) {
+            resultDiv.innerHTML = `
+                <p><strong>検出されたQRコード:</strong></p>
+                <div class="result-text">${escapeHtml(data)}</div>
+                ${isURL(data) ? `<p class="info"><a href="${escapeHtml(data)}" target="_blank" rel="noopener noreferrer">リンクを開く</a></p>` : ''}
+            `;
+            actionsDiv.style.display = 'block';
+        }
+
+        function showError(message) {
+            resultDiv.innerHTML = `<p class="error">${message}</p>`;
+            actionsDiv.style.display = 'none';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function isURL(text) {
+            try {
+                new URL(text);
+                return true;
+            } catch {
+                return false;
+            }
+        }
+
+        async function copyResult() {
+            if (decodedData.length === 0) return;
+
+            try {
+                await navigator.clipboard.writeText(decodedData.join('\n'));
+                copyStatus.style.display = 'inline';
+                setTimeout(() => {
+                    copyStatus.style.display = 'none';
+                }, 2000);
+            } catch (err) {
+                alert('コピーに失敗しました: ' + err.message);
+            }
+        }
+
+        function clearAll() {
+            preview.style.display = 'none';
+            preview.src = '';
+            decodedData = [];
+            resultDiv.innerHTML = '<p class="info">画像をペーストまたはドロップすると、QRコードを検出してデコードします。</p>';
+            actionsDiv.style.display = 'none';
+            fileInput.value = '';
+        }
+    </script>
+</body>
+</html>
