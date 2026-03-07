@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>時差再生 - サポート / Support</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Segoe UI", sans-serif;
+            line-height: 1.8;
+            color: #333;
+            background: #fafafa;
+        }
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 48px 24px;
+        }
+        h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+        .app-name {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 40px;
+        }
+        .lang-toggle {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 32px;
+        }
+        .lang-toggle button {
+            padding: 6px 16px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background: #fff;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .lang-toggle button.active {
+            background: #333;
+            color: #fff;
+            border-color: #333;
+        }
+        section { display: none; }
+        section.active { display: block; }
+        h2 {
+            font-size: 20px;
+            margin: 32px 0 12px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        h2:first-child { margin-top: 0; }
+        p, li { margin-bottom: 12px; }
+        ul { padding-left: 24px; margin-bottom: 16px; }
+        a { color: #0066cc; }
+        .contact-box {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 24px;
+            margin-top: 24px;
+        }
+        .contact-box p { margin-bottom: 8px; }
+        .nav { margin-top: 48px; font-size: 13px; color: #999; }
+        .nav a { color: #999; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Support</h1>
+        <div class="app-name">時差再生 / JisaSaisei</div>
+
+        <div class="lang-toggle">
+            <button class="active" onclick="switchLang('ja')">日本語</button>
+            <button onclick="switchLang('en')">English</button>
+        </div>
+
+        <section id="ja" class="active">
+            <h2>使い方</h2>
+            <ul>
+                <li><strong>遅延再生</strong>: アプリを起動するとカメラが開始します。設定した秒数だけ遅れた映像が表示されます。</li>
+                <li><strong>遅延時間の変更</strong>: 右上の秒数バッジをタップして、ダイヤルで1〜120秒の範囲で設定できます。</li>
+                <li><strong>一時停止</strong>: 画面をタップすると映像が一時停止します。もう一度タップすると再開します。</li>
+                <li><strong>スクラブ再生</strong>: 一時停止中に左右にドラッグすると、前後の映像を確認できます。</li>
+                <li><strong>ズーム</strong>: ピンチで拡大、二本指ドラッグで移動できます。1xボタンでリセット。</li>
+                <li><strong>画像の共有・保存</strong>: 一時停止中に長押しすると、上スワイプで共有、下スワイプで画像保存ができます。</li>
+                <li><strong>クリップ保存</strong>: 一時停止中に「クリップ保存」ボタンで動画を写真ライブラリに保存できます。</li>
+                <li><strong>カメラ切替</strong>: フロント/リアカメラ、広角/標準レンズを切り替えられます。</li>
+            </ul>
+
+            <h2>よくある質問</h2>
+            <p><strong>Q: カメラが映りません</strong></p>
+            <p>A: 設定アプリ → 時差再生 → カメラ のアクセス許可をオンにしてください。</p>
+
+            <p><strong>Q: バッファリングが長い</strong></p>
+            <p>A: 遅延時間が長いほどバッファリングに時間がかかります。右上のダイヤルで短い秒数に変更してみてください。</p>
+
+            <p><strong>Q: クリップが保存できません</strong></p>
+            <p>A: 設定アプリ → 時差再生 → 写真 のアクセス許可をオンにしてください。</p>
+
+            <h2>お問い合わせ</h2>
+            <div class="contact-box">
+                <p>ご質問・不具合報告は以下までご連絡ください。</p>
+                <p><a href="mailto:shatto@llhi.org">shatto@llhi.org</a></p>
+            </div>
+
+            <div class="nav"><a href="privacy.html">プライバシーポリシー</a></div>
+        </section>
+
+        <section id="en">
+            <h2>How to Use</h2>
+            <ul>
+                <li><strong>Delayed Playback</strong>: The camera starts when you open the app. The display shows footage delayed by the configured number of seconds.</li>
+                <li><strong>Change Delay</strong>: Tap the seconds badge in the top right to open the dial. Set anywhere from 1 to 120 seconds.</li>
+                <li><strong>Pause</strong>: Tap the screen to pause. Tap again to resume.</li>
+                <li><strong>Scrub</strong>: While paused, drag left or right to scrub through the footage.</li>
+                <li><strong>Zoom</strong>: Pinch to zoom in. Two-finger drag to pan. Tap the 1x button to reset.</li>
+                <li><strong>Share / Save Image</strong>: While paused, hold down then swipe up to share or swipe down to save the image.</li>
+                <li><strong>Save Clip</strong>: While paused, tap "Save Clip" to save a video clip to your photo library.</li>
+                <li><strong>Switch Camera</strong>: Toggle between front/rear camera and wide/normal lens.</li>
+            </ul>
+
+            <h2>FAQ</h2>
+            <p><strong>Q: The camera doesn't work</strong></p>
+            <p>A: Go to Settings &rarr; JisaSaisei &rarr; Camera and enable access.</p>
+
+            <p><strong>Q: Buffering takes a long time</strong></p>
+            <p>A: Longer delay times require more buffering. Try reducing the delay using the dial in the top right.</p>
+
+            <p><strong>Q: I can't save clips</strong></p>
+            <p>A: Go to Settings &rarr; JisaSaisei &rarr; Photos and enable access.</p>
+
+            <h2>Contact</h2>
+            <div class="contact-box">
+                <p>For questions or bug reports, please contact us at:</p>
+                <p><a href="mailto:shatto@llhi.org">shatto@llhi.org</a></p>
+            </div>
+
+            <div class="nav"><a href="privacy.html">Privacy Policy</a></div>
+        </section>
+    </div>
+
+    <script>
+        function switchLang(lang) {
+            document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.lang-toggle button').forEach(b => b.classList.remove('active'));
+            document.getElementById(lang).classList.add('active');
+            document.querySelector(`[onclick="switchLang('${lang}')"]`).classList.add('active');
+        }
+    </script>
+</body>
+</html>
