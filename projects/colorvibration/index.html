@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>白黒交互表示アプリ</title>
+    <title>キャプチャ差分検出アプリ</title>
     <style>
         body {
             margin: 0;
@@ -24,41 +24,40 @@
         main {
             flex: 1;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 2rem;
-        }
-        
-        #square-container {
-            position: relative;
-            width: 200px;
-            height: 200px;
-            border: 1px solid #ccc;
-        }
-        
-        #square {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            background-color: rgb(105, 190, 107);
-            cursor: none; /* カーソルを非表示にする */
-        }
-        
-        footer {
-            background-color: #333;
-            color: white;
             padding: 1rem;
+        }
+        
+        .video-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .video-item {
             text-align: center;
+        }
+        
+        video, canvas {
+            border: 1px solid #ccc;
+            max-width: 100%;
+            height: auto;
         }
         
         .controls {
-            margin-top: 20px;
-            text-align: center;
+            margin: 20px 0;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
         }
         
         button {
             padding: 8px 16px;
-            margin: 0 5px;
             background-color: #4CAF50;
             color: white;
             border: none;
@@ -70,115 +69,299 @@
             background-color: #45a049;
         }
         
-        .info {
-            margin-top: 10px;
-            font-size: 14px;
-            color: #666;
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        .settings {
+            margin: 10px 0;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+        }
+        
+        .setting-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        label {
+            margin-bottom: 5px;
+        }
+        
+        .info-panel {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+        }
+        
+        footer {
+            background-color: #333;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+        }
+        
+        @media (max-width: 768px) {
+            .video-container {
+                flex-direction: column;
+                align-items: center;
+            }
         }
     </style>
 </head>
 <body>
     <header>
-        <h1>白黒交互表示アプリ</h1>
-        <p>60FPSでの白黒切り替えデモ</p>
+        <h1>キャプチャ差分検出アプリ</h1>
+        <p>前フレームとの差分を検出し、変化部分を白で表示</p>
     </header>
     
     <main>
-        <div>
-            <div id="square-container">
-                <div id="square"></div>
+        <div class="video-container">
+            <div class="video-item">
+                <h3>カメラ映像</h3>
+                <video id="video" width="400" height="300" autoplay muted></video>
             </div>
-            <div class="controls">
-                <button id="start-stop">一時停止</button>
-                <button id="change-size">サイズ変更</button>
+            <div class="video-item">
+                <h3>差分検出映像</h3>
+                <canvas id="diffCanvas" width="400" height="300"></canvas>
             </div>
-            <div class="info">
-                <p>現在のFPS: <span id="fps-counter">60</span></p>
-                <p>状態: <span id="status">実行中</span></p>
+        </div>
+        
+        <div class="controls">
+            <button id="startButton">カメラ開始</button>
+            <button id="stopButton" disabled>停止</button>
+        </div>
+        
+        <div class="settings">
+            <div class="setting-item">
+                <label for="sensitivitySlider">感度</label>
+                <input type="range" id="sensitivitySlider" min="1" max="100" value="30">
+                <span id="sensitivityValue">30</span>
+            </div>
+            
+            <div class="setting-item">
+                <label for="blurSlider">ぼかし</label>
+                <input type="range" id="blurSlider" min="0" max="20" value="0">
+                <span id="blurValue">0</span>
+            </div>
+        </div>
+        
+        <div class="info-panel">
+            <div class="info-item">
+                <span>FPS:</span>
+                <span id="fpsValue">0</span>
+            </div>
+            <div class="info-item">
+                <span>変化ピクセル割合:</span>
+                <span id="changePercent">0%</span>
             </div>
         </div>
     </main>
     
     <footer>
-        <p>&copy; 2025 白黒交互表示アプリ - すべての権利を留保</p>
+        <p>&copy; 2025 キャプチャ差分検出アプリ - すべての権利を留保</p>
     </footer>
     
     <script>
-        // DOMが読み込まれたら実行
         document.addEventListener('DOMContentLoaded', function() {
-            const square = document.getElementById('square');
-            const startStopButton = document.getElementById('start-stop');
-            const changeSizeButton = document.getElementById('change-size');
-            const fpsCounter = document.getElementById('fps-counter');
-            const statusElement = document.getElementById('status');
+            // DOM要素の取得
+            const video = document.getElementById('video');
+            const diffCanvas = document.getElementById('diffCanvas');
+            const diffCtx = diffCanvas.getContext('2d', { willReadFrequently: true });
             
-            let isWhite = false;
-            let isRunning = true;
-            let lastFrameTime = performance.now();
+            const startButton = document.getElementById('startButton');
+            const stopButton = document.getElementById('stopButton');
+            
+            const sensitivitySlider = document.getElementById('sensitivitySlider');
+            const sensitivityValue = document.getElementById('sensitivityValue');
+            const blurSlider = document.getElementById('blurSlider');
+            const blurValue = document.getElementById('blurValue');
+            
+            const fpsValue = document.getElementById('fpsValue');
+            const changePercent = document.getElementById('changePercent');
+            
+            // 設定値
+            let sensitivity = parseInt(sensitivitySlider.value);
+            let blurAmount = parseInt(blurSlider.value);
+            
+            // フレーム処理関連の変数
+            let isProcessing = false;
+            let previousImageData = null;
+            let processingCanvas = document.createElement('canvas');
+            let processingCtx = processingCanvas.getContext('2d', { willReadFrequently: true });
+            
+            // FPS計測用の変数
             let frameCount = 0;
             let lastFpsUpdateTime = performance.now();
-            let sizes = [200, 150, 100, 250, 300];
-            let currentSizeIndex = 0;
+            let lastFrameTime = performance.now();
             
-            // 正確に60FPSで動作するためのタイムステップ (16.67ms ≈ 1000ms/60)
-            const frameInterval = 1000 / 60;
+            // メディアストリーム
+            let mediaStream = null;
             
-            // 60FPSでのアニメーション
-            function animate(timestamp) {
-                if (!isRunning) return;
+            // カメラの開始
+            startButton.addEventListener('click', async function() {
+                try {
+                    // 可能な限り高いフレームレートでカメラを取得
+                    const constraints = {
+                        video: {
+                            width: { ideal: 1280 },
+                            height: { ideal: 720 },
+                            frameRate: { ideal: 60 }
+                        }
+                    };
+                    
+                    mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+                    video.srcObject = mediaStream;
+                    
+                    // キャンバスの初期化
+                    const { videoWidth, videoHeight } = video;
+                    if (videoWidth && videoHeight) {
+                        diffCanvas.width = videoWidth;
+                        diffCanvas.height = videoHeight;
+                        processingCanvas.width = videoWidth;
+                        processingCanvas.height = videoHeight;
+                    }
+                    
+                    // ボタンの状態を更新
+                    startButton.disabled = true;
+                    stopButton.disabled = false;
+                    
+                    // 映像処理を開始
+                    isProcessing = true;
+                    processFrame();
+                    
+                } catch (error) {
+                    console.error('カメラの取得に失敗しました:', error);
+                    alert('カメラの取得に失敗しました: ' + error.message);
+                }
+            });
+            
+            // カメラの停止
+            stopButton.addEventListener('click', function() {
+                if (mediaStream) {
+                    mediaStream.getTracks().forEach(track => track.stop());
+                    video.srcObject = null;
+                    mediaStream = null;
+                }
                 
-                // 現在時刻の取得
+                isProcessing = false;
+                previousImageData = null;
+                
+                // キャンバスをクリア
+                diffCtx.clearRect(0, 0, diffCanvas.width, diffCanvas.height);
+                
+                // ボタンの状態を更新
+                startButton.disabled = false;
+                stopButton.disabled = true;
+            });
+            
+            // 感度スライダーのイベントリスナー
+            sensitivitySlider.addEventListener('input', function() {
+                sensitivity = parseInt(this.value);
+                sensitivityValue.textContent = sensitivity;
+            });
+            
+            // ぼかしスライダーのイベントリスナー
+            blurSlider.addEventListener('input', function() {
+                blurAmount = parseInt(this.value);
+                blurValue.textContent = blurAmount;
+            });
+            
+            // フレーム処理
+            function processFrame() {
+                if (!isProcessing) return;
+                
+                // 現在の時刻を取得
                 const now = performance.now();
-                const elapsed = now - lastFrameTime;
                 
-                // フレームカウントの更新（FPS計測用）
+                // FPS計測
                 frameCount++;
-                
-                // 1秒ごとにFPSを更新
                 if (now - lastFpsUpdateTime >= 1000) {
                     const fps = Math.round(frameCount * 1000 / (now - lastFpsUpdateTime));
-                    fpsCounter.textContent = fps;
+                    fpsValue.textContent = fps;
                     frameCount = 0;
                     lastFpsUpdateTime = now;
                 }
                 
-                // 16.67ms (60FPS)ごとに色を切り替え
-                if (elapsed >= frameInterval) {
-                    // 色の切り替え
-                    isWhite = !isWhite;
-                    square.style.backgroundColor = isWhite ? 'rgb(105, 190, 107)' : 'rgb(147, 173, 189)';
+                // ビデオフレームを処理用キャンバスに描画
+                if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                    processingCtx.drawImage(video, 0, 0, processingCanvas.width, processingCanvas.height);
                     
-                    // 時間を更新（複数のフレームをスキップした場合でも一定のインターバルを維持）
-                    lastFrameTime = now - (elapsed % frameInterval);
+                    // 現在のフレームの画像データを取得
+                    const currentImageData = processingCtx.getImageData(0, 0, processingCanvas.width, processingCanvas.height);
+                    
+                    // 前のフレームと比較して差分を検出
+                    if (previousImageData) {
+                        const diffImageData = diffCtx.createImageData(processingCanvas.width, processingCanvas.height);
+                        const diffPixels = diffImageData.data;
+                        const currentPixels = currentImageData.data;
+                        const prevPixels = previousImageData.data;
+                        
+                        let changedPixelsCount = 0;
+                        const totalPixels = currentImageData.width * currentImageData.height;
+                        
+                        // 各ピクセルの差分を計算
+                        for (let i = 0; i < currentPixels.length; i += 4) {
+                            // RGB値の差分の合計を計算
+                            const rDiff = Math.abs(currentPixels[i] - prevPixels[i]);
+                            const gDiff = Math.abs(currentPixels[i + 1] - prevPixels[i + 1]);
+                            const bDiff = Math.abs(currentPixels[i + 2] - prevPixels[i + 2]);
+                            
+                            // 差分の合計が閾値より大きければ変化あり（白）、なければ変化なし（黒）
+                            const totalDiff = rDiff + gDiff + bDiff;
+                            
+                            if (totalDiff > sensitivity) {
+                                // 変化あり - 白
+                                diffPixels[i] = 255;     // R
+                                diffPixels[i + 1] = 255; // G
+                                diffPixels[i + 2] = 255; // B
+                                diffPixels[i + 3] = 255; // A
+                                
+                                changedPixelsCount++;
+                            } else {
+                                // 変化なし - 黒
+                                diffPixels[i] = 0;       // R
+                                diffPixels[i + 1] = 0;   // G
+                                diffPixels[i + 2] = 0;   // B
+                                diffPixels[i + 3] = 255; // A
+                            }
+                        }
+                        
+                        // 差分画像を描画
+                        diffCtx.putImageData(diffImageData, 0, 0);
+                        
+                        // ぼかし処理（必要な場合）
+                        if (blurAmount > 0) {
+                            diffCtx.filter = `blur(${blurAmount}px)`;
+                            diffCtx.drawImage(diffCanvas, 0, 0);
+                            diffCtx.filter = 'none';
+                        }
+                        
+                        // 変化ピクセルの割合を更新
+                        const percentChanged = (changedPixelsCount / totalPixels * 100).toFixed(2);
+                        changePercent.textContent = `${percentChanged}%`;
+                    }
+                    
+                    // 現在のフレームを前のフレームとして保存
+                    previousImageData = currentImageData;
                 }
                 
-                // 次のフレームの要求
-                requestAnimationFrame(animate);
+                // 次のフレームの処理をリクエスト
+                requestAnimationFrame(processFrame);
             }
-            
-            // アニメーションの開始
-            requestAnimationFrame(animate);
-            
-            // 開始/停止ボタンのイベントリスナー
-            startStopButton.addEventListener('click', function() {
-                isRunning = !isRunning;
-                if (isRunning) {
-                    startStopButton.textContent = '一時停止';
-                    statusElement.textContent = '実行中';
-                    requestAnimationFrame(animate);
-                } else {
-                    startStopButton.textContent = '開始';
-                    statusElement.textContent = '停止中';
-                }
-            });
-            
-            // サイズ変更ボタンのイベントリスナー
-            changeSizeButton.addEventListener('click', function() {
-                currentSizeIndex = (currentSizeIndex + 1) % sizes.length;
-                const newSize = sizes[currentSizeIndex];
-                document.getElementById('square-container').style.width = newSize + 'px';
-                document.getElementById('square-container').style.height = newSize + 'px';
-            });
         });
     </script>
 </body>
