@@ -66,8 +66,10 @@ body { font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif; bac
 .shajo-item .shajo-value { font-size: calc(clamp(1.5rem, 5vh, 3.5rem) * var(--scale)); word-break: break-word; line-height: 1.2; font-weight: bold; flex: 1; overflow: hidden; }
 /* autofit mode */
 .autofit .shajo-item .shajo-value { font-size: unset; text-wrap: balance; }
+.autofit .shajo-item .shajo-value.has-pipe { word-break: keep-all; overflow-wrap: break-word; }
 .autofit .slot-content { font-size: unset; }
 .autofit .team-chip { text-wrap: balance; }
+.autofit .team-chip.has-pipe { word-break: keep-all; overflow-wrap: break-word; }
 .autofit .slot-label { font-size: unset; }
 
 /* Right: 控え column takes 40% width, 3 rows stacked vertically */
@@ -134,6 +136,9 @@ tr.drag-over td { border-top: 3px solid var(--btn-primary); }
 .setting-row input[type="range"] { flex: 1; accent-color: var(--btn-primary); }
 .setting-row span { min-width: 50px; text-align: right; font-family: monospace; }
 .setting-row select { padding: 6px 10px; border-radius: 6px; border: 1px solid var(--input-border); background: var(--edit-bg); color: var(--text); font-size: 0.9rem; }
+.setting-hint { margin-top: 20px; padding: 12px 16px; background: var(--chip-bg); border-radius: 8px; line-height: 1.6; }
+.setting-hint h3 { margin-bottom: 8px; }
+.setting-hint code { background: var(--shajo-bg); padding: 2px 6px; border-radius: 4px; font-family: monospace; }
 </style>
 </head>
 <body>
@@ -213,6 +218,11 @@ tr.drag-over td { border-top: 3px solid var(--btn-primary); }
       <span id="scale-value">1.00x</span>
       <button class="btn btn-secondary btn-small" id="scale-reset">リセット</button>
     </div>
+    <div class="setting-hint">
+      <h3>ヒント</h3>
+      <p>チーム名に <code>|</code>（パイプ）を入れると、改行が必要な場合にその位置で優先的に改行されます。改行が不要な場合は無視されます。</p>
+      <p>例: <code>東京慈恵会|医科大学A</code></p>
+    </div>
   </div>
 </div>
 
@@ -269,7 +279,7 @@ function renderCurrentSlot() {
   if (!row) { el.innerHTML = "<span style='opacity:0.4'>データなし</span>"; return; }
   const labels = ["第一射場", "第二射場", "第三射場", "第四射場"];
   el.innerHTML = row.map((val, i) =>
-    `<div class="shajo-item"><div class="shajo-label">${labels[i]}</div><div class="shajo-value">${escHtml(val) || "—"}</div></div>`
+    `<div class="shajo-item"><div class="shajo-label">${labels[i]}</div><div class="shajo-value${val.includes("|") ? " has-pipe" : ""}">${formatText(val) || "—"}</div></div>`
   ).join("");
 }
 
@@ -282,7 +292,7 @@ function renderWaitingSlot(id, index) {
   }
   // Always show 4 cells in 2x2 grid
   el.innerHTML = row.map(v =>
-    `<span class="team-chip">${v.trim() ? escHtml(v) : '<span style="opacity:0.3">—</span>'}</span>`
+    `<span class="team-chip${v.includes("|") ? " has-pipe" : ""}">${v.trim() ? formatText(v) : '<span style="opacity:0.3">—</span>'}</span>`
   ).join("");
 }
 
@@ -290,6 +300,16 @@ function escHtml(s) {
   const d = document.createElement("div");
   d.textContent = s;
   return d.innerHTML;
+}
+
+// Convert | to zero-width space (optional line break point)
+function formatText(s) {
+  if (!s || !s.trim()) return "";
+  return s.split("|").map(part => {
+    const d = document.createElement("div");
+    d.textContent = part;
+    return d.innerHTML;
+  }).join("\u200B");
 }
 
 // ===== Autofit =====
@@ -314,7 +334,8 @@ function measureWrapped(text, fontSize, font, boxW) {
   _measureBox.style.fontSize = fontSize + "px";
   _measureBox.style.fontFamily = font;
   _measureBox.style.width = boxW + "px";
-  _measureBox.textContent = text;
+  // Use zero-width space for | so measurement matches rendering
+  _measureBox.textContent = text.replace(/\|/g, "\u200B");
   return { h: _measureBox.offsetHeight, lines: Math.round(_measureBox.offsetHeight / (fontSize * 1.2)) };
 }
 
