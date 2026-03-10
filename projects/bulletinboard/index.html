@@ -112,6 +112,7 @@ body { font-family: "Noto Sans JP", sans-serif; background: var(--bg); color: va
 .btn:hover { opacity: 0.8; }
 .btn-primary { background: var(--btn-primary); color: #fff; }
 .btn-secondary { background: var(--btn-secondary); color: #fff; }
+.btn-popup { background: #e6a817; color: #1a1a2e; }
 .btn-small { padding: 6px 12px; font-size: 0.8rem; }
 
 /* Data table */
@@ -186,6 +187,7 @@ tr.drag-over td { border-top: 3px solid var(--btn-primary); }
     <button class="btn btn-secondary btn-small" id="btn-add-row">＋ 行追加</button>
     <button class="btn btn-secondary btn-small" id="btn-import">CSVインポート</button>
     <button class="btn btn-secondary btn-small" id="btn-export">CSVエクスポート</button>
+    <button class="btn btn-popup btn-small" id="btn-popup">表示を別窓で開く</button>
   </div>
   <input type="file" id="file-input" accept=".csv" style="display:none;">
   <div id="data-table-wrapper">
@@ -344,8 +346,7 @@ _measure.style.cssText = "position:absolute;left:-9999px;top:-9999px;white-space
 document.body.appendChild(_measure);
 
 function measureText(text, fontSize, fontFamily) {
-  _measure.style.fontSize = fontSize + "px";
-  _measure.style.fontFamily = fontFamily || "inherit";
+  _measure.style.cssText = "position:absolute;left:-9999px;top:-9999px;white-space:nowrap;visibility:hidden;font-weight:bold;font-size:" + fontSize + "px;font-family:" + (fontFamily || "inherit");
   _measure.textContent = text;
   return { w: _measure.offsetWidth, h: _measure.offsetHeight };
 }
@@ -374,7 +375,7 @@ function calcFitSize(text, rawText, font, maxW, maxH, maxLines) {
   if (src.includes("|")) {
     const segments = src.split("|");
     let lo = 4, hi = maxH;
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 10; i++) {
       const mid = (lo + hi) / 2;
       const totalH = segments.length * mid * 1.3;
       let fits = totalH <= maxH;
@@ -391,7 +392,7 @@ function calcFitSize(text, rawText, font, maxW, maxH, maxLines) {
 
   // No pipe: standard wrapping fit
   let lo = 4, hi = maxH;
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 10; i++) {
     const mid = (lo + hi) / 2;
     const r = measureWrapped(text, mid, font, maxW);
     if (r.lines > maxLines || r.h > maxH) {
@@ -426,6 +427,7 @@ function runAutofit() {
   // === 現在の立ち: unify font size across all 4 shajo values ===
   const shajoItems = document.querySelectorAll(".shajo-item");
   const shajoInfo = [];
+  const shajoFont = shajoItems.length > 0 ? getComputedStyle(shajoItems[0]).fontFamily : "inherit";
   shajoItems.forEach(item => {
     const val = item.querySelector(".shajo-value");
     if (!val) return;
@@ -436,9 +438,8 @@ function runAutofit() {
     if (maxW > 0 && maxH > 0) {
       const text = val.textContent.trim();
       const raw = val.dataset.raw || text;
-      const font = getComputedStyle(val).fontFamily;
-      const size = calcFitSize(text, raw, font, maxW, maxH, 2);
-      shajoInfo.push({ el: val, text, raw, font, maxW, maxH, size });
+      const size = calcFitSize(text, raw, shajoFont, maxW, maxH, 2);
+      shajoInfo.push({ el: val, text, raw, font: shajoFont, maxW, maxH, size });
     }
   });
   if (shajoInfo.length > 0) {
@@ -461,6 +462,7 @@ function runAutofit() {
     chips.forEach(c => { c.style.fontSize = "8px"; });
     void grid.offsetHeight;
     // Record fixed cell sizes
+    const chipFont = getComputedStyle(chips[0]).fontFamily;
     const chipInfo = [];
     chips.forEach(chip => {
       const cw = chip.clientWidth - 12;
@@ -468,9 +470,8 @@ function runAutofit() {
       if (cw > 0 && ch > 0) {
         const text = chip.textContent.trim();
         const raw = chip.dataset.raw || text;
-        const font = getComputedStyle(chip).fontFamily;
-        const size = calcFitSize(text, raw, font, cw, ch, 2);
-        chipInfo.push({ el: chip, text, raw, font, maxW: cw, maxH: ch, size });
+        const size = calcFitSize(text, raw, chipFont, cw, ch, 2);
+        chipInfo.push({ el: chip, text, raw, font: chipFont, maxW: cw, maxH: ch, size });
       }
     });
     if (chipInfo.length > 0) {
@@ -505,6 +506,11 @@ function playTone() {
 
 // ===== Edit table =====
 let dragSrcIndex = null;
+let _renderViewTimer = null;
+function debouncedRenderView() {
+  if (_renderViewTimer) cancelAnimationFrame(_renderViewTimer);
+  _renderViewTimer = requestAnimationFrame(renderView);
+}
 
 function renderTable() {
   const tbody = document.getElementById("data-tbody");
@@ -534,7 +540,7 @@ function renderTable() {
       input.value = row[ci] || "";
       input.addEventListener("input", () => {
         data[ri][ci] = input.value;
-        renderView();
+        debouncedRenderView();
         saveToStorage();
       });
       td.appendChild(input);
@@ -707,6 +713,10 @@ function setupEvents() {
     wrapper.scrollTop = wrapper.scrollHeight;
   });
   document.getElementById("btn-export").addEventListener("click", exportCSV);
+  document.getElementById("btn-popup").addEventListener("click", () => {
+    const url = location.href.split("?")[0] + "?view=1";
+    window.open(url, "bulletinboard_view", "width=1280,height=720");
+  });
   document.getElementById("btn-import").addEventListener("click", () => {
     document.getElementById("file-input").click();
   });
@@ -812,6 +822,41 @@ function setupEvents() {
     const isLight = document.documentElement.classList.contains("light");
     themeBtn.textContent = isLight ? "☀️" : "🌙";
     localStorage.setItem("bulletinboard_theme", isLight ? "light" : "dark");
+  });
+}
+
+// View-only mode when opened with ?view=1
+const isViewOnly = new URLSearchParams(location.search).get("view") === "1";
+if (isViewOnly) {
+  document.querySelector(".tab-bar").style.display = "none";
+  // Ensure view panel is shown
+  document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+  document.getElementById("view-panel").classList.add("active");
+  // Listen for storage changes from the editor window
+  window.addEventListener("storage", (e) => {
+    if (e.key === STORAGE_KEY || e.key === STORAGE_POS_KEY) {
+      loadFromStorage();
+      renderView();
+    }
+    if (e.key === "bulletinboard_theme") {
+      document.documentElement.classList.toggle("light", e.newValue === "light");
+    }
+    if (e.key === "bulletinboard_scale") {
+      document.documentElement.style.setProperty("--scale", e.newValue);
+    }
+    if (e.key === "bulletinboard_label_scale") {
+      document.documentElement.style.setProperty("--label-scale", e.newValue);
+    }
+    if (e.key === "bulletinboard_sizemode") {
+      sizeMode = e.newValue;
+      document.body.classList.toggle("autofit", sizeMode === "autofit");
+      document.querySelectorAll(".shajo-value, .team-chip").forEach(el => el.style.fontSize = "");
+      renderView();
+    }
+    if (e.key === "bulletinboard_pipemode") {
+      currentPipeMode = e.newValue;
+      renderView();
+    }
   });
 }
 
