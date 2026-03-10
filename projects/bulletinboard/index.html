@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
 <title>掲示板</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -39,7 +42,7 @@
   --th-bg: #3a7fd5;
 }
 
-body { font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; transition: background 0.3s, color 0.3s; }
+body { font-family: "Noto Sans JP", sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; transition: background 0.3s, color 0.3s; }
 
 /* Tab bar */
 .tab-bar { display: flex; background: var(--tab-bg); border-bottom: 2px solid var(--tab-border); }
@@ -220,6 +223,13 @@ tr.drag-over td { border-top: 3px solid var(--btn-primary); }
       <button class="btn btn-secondary btn-small" id="scale-reset">リセット</button>
     </div>
     <div class="setting-row">
+      <label>現在の立ちで | 改行</label>
+      <select id="current-pipe-mode">
+        <option value="on">有効</option>
+        <option value="off">無効（1行表示）</option>
+      </select>
+    </div>
+    <div class="setting-row">
       <label for="label-slider">ラベルサイズ</label>
       <input type="range" id="label-slider" min="0.5" max="2.5" step="0.05" value="1">
       <span id="label-value">1.00x</span>
@@ -243,6 +253,7 @@ tr.drag-over td { border-top: 3px solid var(--btn-primary); }
 let data = []; // array of [shajo1, shajo2, shajo3, shajo4]
 let currentIndex = 0; // which row is "現在の立ち"
 let sizeMode = "scale"; // "scale" or "autofit"
+let currentPipeMode = "on"; // "on" or "off"
 
 const STORAGE_KEY = "bulletinboard_data";
 const STORAGE_POS_KEY = "bulletinboard_pos";
@@ -288,9 +299,13 @@ function renderCurrentSlot() {
   const row = data[currentIndex];
   if (!row) { el.innerHTML = "<span style='opacity:0.4'>データなし</span>"; return; }
   const labels = ["第一射場", "第二射場", "第三射場", "第四射場"];
-  el.innerHTML = row.map((val, i) =>
-    `<div class="shajo-item"><div class="shajo-label">${labels[i]}</div><div class="shajo-value${val.includes("|") ? " has-pipe" : ""}" data-raw="${escHtml(val)}">${formatText(val) || "—"}</div></div>`
-  ).join("");
+  const usePipe = currentPipeMode === "on";
+  el.innerHTML = row.map((val, i) => {
+    const hasPipe = usePipe && val.includes("|");
+    const display = usePipe ? formatText(val) : escHtml(val.replace(/\|/g, ""));
+    const rawAttr = usePipe ? val : val.replace(/\|/g, "");
+    return `<div class="shajo-item"><div class="shajo-label">${labels[i]}</div><div class="shajo-value${hasPipe ? " has-pipe" : ""}" data-raw="${escHtml(rawAttr)}">${display || "—"}</div></div>`;
+  }).join("");
 }
 
 function renderWaitingSlot(id, index) {
@@ -349,11 +364,10 @@ function measureWrapped(text, fontSize, font, boxW) {
   return { h: _measureBox.offsetHeight, lines: Math.round(_measureBox.offsetHeight / (fontSize * 1.2)) };
 }
 
-function fitToBox(el, maxW, maxH, maxLines, rawText) {
+// Calculate the max font size that fits, returns the size (does NOT apply it)
+function calcFitSize(text, rawText, font, maxW, maxH, maxLines) {
   maxLines = maxLines || 2;
-  const text = el.textContent.trim();
-  if (!text || text === "—") { el.style.fontSize = Math.min(maxH * 0.7, maxW * 0.4) + "px"; return; }
-  const font = getComputedStyle(el).fontFamily;
+  if (!text || text === "—") return Math.min(maxH * 0.7, maxW * 0.4);
   const src = rawText || text;
 
   // If text has |, try forced line break approach (each segment = 1 line)
@@ -362,7 +376,6 @@ function fitToBox(el, maxW, maxH, maxLines, rawText) {
     let lo = 4, hi = maxH;
     for (let i = 0; i < 20; i++) {
       const mid = (lo + hi) / 2;
-      // Each segment must fit in maxW, total lines * lineH must fit in maxH
       const totalH = segments.length * mid * 1.3;
       let fits = totalH <= maxH;
       if (fits) {
@@ -373,8 +386,7 @@ function fitToBox(el, maxW, maxH, maxLines, rawText) {
       }
       if (fits) { lo = mid; } else { hi = mid; }
     }
-    el.style.fontSize = Math.floor(lo) + "px";
-    return;
+    return Math.floor(lo);
   }
 
   // No pipe: standard wrapping fit
@@ -388,22 +400,59 @@ function fitToBox(el, maxW, maxH, maxLines, rawText) {
       lo = mid;
     }
   }
-  el.style.fontSize = Math.floor(lo) + "px";
+  return Math.floor(lo);
+}
+
+// Verify that a given font size actually fits (no overflow)
+function verifyFit(text, rawText, font, fontSize, maxW, maxH) {
+  const src = rawText || text;
+  if (src.includes("|")) {
+    const segments = src.split("|");
+    const totalH = segments.length * fontSize * 1.3;
+    if (totalH > maxH) return false;
+    for (const seg of segments) {
+      const m = measureText(seg, fontSize, font);
+      if (m.w > maxW) return false;
+    }
+    return true;
+  }
+  const r = measureWrapped(text, fontSize, font, maxW);
+  return r.h <= maxH;
 }
 
 function runAutofit() {
   if (sizeMode !== "autofit") return;
-  // Fit shajo values in current slot
-  document.querySelectorAll(".shajo-item").forEach(item => {
+
+  // === 現在の立ち: unify font size across all 4 shajo values ===
+  const shajoItems = document.querySelectorAll(".shajo-item");
+  const shajoInfo = [];
+  shajoItems.forEach(item => {
     const val = item.querySelector(".shajo-value");
     if (!val) return;
     const label = item.querySelector(".shajo-label");
     const labelW = label ? label.offsetWidth + 16 : 0;
     const maxW = item.clientWidth - labelW - 32;
     const maxH = item.clientHeight - 8;
-    if (maxW > 0 && maxH > 0) fitToBox(val, maxW, maxH, 2, val.dataset.raw);
+    if (maxW > 0 && maxH > 0) {
+      const text = val.textContent.trim();
+      const raw = val.dataset.raw || text;
+      const font = getComputedStyle(val).fontFamily;
+      const size = calcFitSize(text, raw, font, maxW, maxH, 2);
+      shajoInfo.push({ el: val, text, raw, font, maxW, maxH, size });
+    }
   });
-  // Fit team chips in waiting slots
+  if (shajoInfo.length > 0) {
+    let minSize = Math.min(...shajoInfo.map(s => s.size));
+    // Verify the min size fits all items
+    for (const s of shajoInfo) {
+      while (minSize > 4 && !verifyFit(s.text, s.raw, s.font, minSize, s.maxW, s.maxH)) {
+        minSize--;
+      }
+    }
+    shajoInfo.forEach(s => { s.el.style.fontSize = minSize + "px"; });
+  }
+
+  // === 各控えスロット: unify font size within each slot's 2x2 grid ===
   document.querySelectorAll(".slot-content").forEach(grid => {
     if (grid.id === "current-content") return;
     const chips = grid.querySelectorAll(".team-chip");
@@ -411,15 +460,28 @@ function runAutofit() {
     // Reset font first so cells shrink to grid size
     chips.forEach(c => { c.style.fontSize = "8px"; });
     void grid.offsetHeight;
-    // Record fixed cell sizes before fitting
-    const sizes = Array.from(chips).map(chip => ({
-      w: chip.clientWidth - 12,
-      h: chip.clientHeight - 8
-    }));
-    chips.forEach((chip, i) => {
-      const { w, h } = sizes[i];
-      if (w > 0 && h > 0) fitToBox(chip, w, h, 2, chip.dataset.raw);
+    // Record fixed cell sizes
+    const chipInfo = [];
+    chips.forEach(chip => {
+      const cw = chip.clientWidth - 12;
+      const ch = chip.clientHeight - 8;
+      if (cw > 0 && ch > 0) {
+        const text = chip.textContent.trim();
+        const raw = chip.dataset.raw || text;
+        const font = getComputedStyle(chip).fontFamily;
+        const size = calcFitSize(text, raw, font, cw, ch, 2);
+        chipInfo.push({ el: chip, text, raw, font, maxW: cw, maxH: ch, size });
+      }
     });
+    if (chipInfo.length > 0) {
+      let minSize = Math.min(...chipInfo.map(s => s.size));
+      for (const s of chipInfo) {
+        while (minSize > 4 && !verifyFit(s.text, s.raw, s.font, minSize, s.maxW, s.maxH)) {
+          minSize--;
+        }
+      }
+      chipInfo.forEach(s => { s.el.style.fontSize = minSize + "px"; });
+    }
   });
 }
 
@@ -651,6 +713,20 @@ function setupEvents() {
   document.getElementById("file-input").addEventListener("change", (e) => {
     if (e.target.files[0]) importCSV(e.target.files[0]);
     e.target.value = "";
+  });
+
+  // Current pipe mode
+  const pipeSelect = document.getElementById("current-pipe-mode");
+  const savedPipe = localStorage.getItem("bulletinboard_pipemode");
+  if (savedPipe) {
+    currentPipeMode = savedPipe;
+    pipeSelect.value = savedPipe;
+  }
+  pipeSelect.addEventListener("change", () => {
+    currentPipeMode = pipeSelect.value;
+    localStorage.setItem("bulletinboard_pipemode", currentPipeMode);
+    document.querySelectorAll(".shajo-value").forEach(el => el.style.fontSize = "");
+    renderView();
   });
 
   // Size mode
