@@ -63,15 +63,20 @@ body { font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif; bac
 /* 射場 items inside current - horizontal rows, label left, value right */
 .shajo-item { flex: 1; min-width: 0; background: var(--shajo-bg); border: 2px solid var(--shajo-border); border-radius: 10px; padding: 4px 16px; display: flex; flex-direction: row; align-items: center; gap: 16px; }
 .shajo-item .shajo-label { font-size: calc(1.3rem * var(--scale)); opacity: 0.5; white-space: nowrap; min-width: 5em; }
-.shajo-item .shajo-value { font-size: calc(clamp(1.5rem, 5vh, 3.5rem) * var(--scale)); word-break: break-word; line-height: 1.2; font-weight: bold; flex: 1; }
+.shajo-item .shajo-value { font-size: calc(clamp(1.5rem, 5vh, 3.5rem) * var(--scale)); word-break: break-word; line-height: 1.2; font-weight: bold; flex: 1; overflow: hidden; }
+/* autofit mode */
+.autofit .shajo-item .shajo-value { font-size: unset; text-wrap: balance; }
+.autofit .slot-content { font-size: unset; }
+.autofit .team-chip { text-wrap: balance; }
+.autofit .slot-label { font-size: unset; }
 
 /* Right: 控え column takes 40% width, 3 rows stacked vertically */
 .waiting-column { width: 40%; height: 100%; display: flex; flex-direction: column; gap: 4px; padding-left: 6px; }
 
 .slot { border-radius: 10px; padding: 8px 10px; display: flex; flex-direction: column; overflow: hidden; }
 .slot-label { font-weight: bold; opacity: 0.7; margin-bottom: 4px; white-space: nowrap; }
-/* Each slot's content is a 2x2 grid for the 4 teams */
-.slot-content { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 4px; flex: 1; }
+/* Each slot's content is a 2x2 grid for the 4 teams - fixed cell sizes */
+.slot-content { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); gap: 4px; flex: 1; overflow: hidden; }
 
 /* 控え slots - proportional sizing */
 .slot.waiting1 { flex: 3; background: linear-gradient(135deg, var(--w1-bg1), var(--w1-bg2)); border: 2px solid var(--w1-border); }
@@ -86,8 +91,8 @@ body { font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif; bac
 .slot.waiting3 .slot-label { font-size: calc(0.9rem * var(--scale)); color: var(--w3-border); }
 .slot.waiting3 .slot-content { font-size: calc(1rem * var(--scale)); }
 
-/* Team name in waiting slots - fill each grid cell */
-.team-chip { background: var(--chip-bg); border-radius: 6px; padding: 2px 6px; word-break: break-word; display: flex; align-items: center; justify-content: center; text-align: center; }
+/* Team name in waiting slots - fill each grid cell, never overflow */
+.team-chip { background: var(--chip-bg); border-radius: 6px; padding: 2px 6px; word-break: break-word; display: flex; align-items: center; justify-content: center; text-align: center; overflow: hidden; min-width: 0; min-height: 0; }
 
 /* Navigation hint */
 .nav-hint { position: fixed; bottom: 4px; right: 10px; font-size: 0.75rem; opacity: 0.3; }
@@ -128,6 +133,7 @@ tr.drag-over td { border-top: 3px solid var(--btn-primary); }
 .setting-row label { min-width: 140px; font-weight: bold; }
 .setting-row input[type="range"] { flex: 1; accent-color: var(--btn-primary); }
 .setting-row span { min-width: 50px; text-align: right; font-family: monospace; }
+.setting-row select { padding: 6px 10px; border-radius: 6px; border: 1px solid var(--input-border); background: var(--edit-bg); color: var(--text); font-size: 0.9rem; }
 </style>
 </head>
 <body>
@@ -195,6 +201,13 @@ tr.drag-over td { border-top: 3px solid var(--btn-primary); }
   <div class="settings-content">
     <h2>設定</h2>
     <div class="setting-row">
+      <label>文字サイズ方式</label>
+      <select id="size-mode">
+        <option value="scale">スライダー（手動）</option>
+        <option value="autofit">自動フィット（枠に合わせる）</option>
+      </select>
+    </div>
+    <div class="setting-row" id="scale-row">
       <label for="scale-slider">文字サイズ（全体）</label>
       <input type="range" id="scale-slider" min="0.5" max="2.5" step="0.05" value="1">
       <span id="scale-value">1.00x</span>
@@ -209,6 +222,7 @@ tr.drag-over td { border-top: 3px solid var(--btn-primary); }
 // ===== State =====
 let data = []; // array of [shajo1, shajo2, shajo3, shajo4]
 let currentIndex = 0; // which row is "現在の立ち"
+let sizeMode = "scale"; // "scale" or "autofit"
 
 const STORAGE_KEY = "bulletinboard_data";
 const STORAGE_POS_KEY = "bulletinboard_pos";
@@ -246,6 +260,7 @@ function renderView() {
   renderWaitingSlot("w1", currentIndex + 1);
   renderWaitingSlot("w2", currentIndex + 2);
   renderWaitingSlot("w3", currentIndex + 3);
+  requestAnimationFrame(runAutofit);
 }
 
 function renderCurrentSlot() {
@@ -275,6 +290,82 @@ function escHtml(s) {
   const d = document.createElement("div");
   d.textContent = s;
   return d.innerHTML;
+}
+
+// ===== Autofit =====
+// Measure text size at a given font-size using an offscreen element
+const _measure = document.createElement("span");
+_measure.style.cssText = "position:absolute;left:-9999px;top:-9999px;white-space:nowrap;visibility:hidden;font-weight:bold;";
+document.body.appendChild(_measure);
+
+function measureText(text, fontSize, fontFamily) {
+  _measure.style.fontSize = fontSize + "px";
+  _measure.style.fontFamily = fontFamily || "inherit";
+  _measure.textContent = text;
+  return { w: _measure.offsetWidth, h: _measure.offsetHeight };
+}
+
+// Offscreen box for measuring wrapped text
+const _measureBox = document.createElement("div");
+_measureBox.style.cssText = "position:absolute;left:-9999px;top:-9999px;visibility:hidden;font-weight:bold;word-break:break-word;";
+document.body.appendChild(_measureBox);
+
+function measureWrapped(text, fontSize, font, boxW) {
+  _measureBox.style.fontSize = fontSize + "px";
+  _measureBox.style.fontFamily = font;
+  _measureBox.style.width = boxW + "px";
+  _measureBox.textContent = text;
+  return { h: _measureBox.offsetHeight, lines: Math.round(_measureBox.offsetHeight / (fontSize * 1.2)) };
+}
+
+function fitToBox(el, maxW, maxH, maxLines) {
+  maxLines = maxLines || 2;
+  const text = el.textContent.trim();
+  if (!text || text === "—") { el.style.fontSize = Math.min(maxH * 0.7, maxW * 0.4) + "px"; return; }
+  const font = getComputedStyle(el).fontFamily;
+  let lo = 4, hi = maxH;
+  for (let i = 0; i < 20; i++) {
+    const mid = (lo + hi) / 2;
+    const r = measureWrapped(text, mid, font, maxW);
+    if (r.lines > maxLines || r.h > maxH) {
+      hi = mid;
+    } else {
+      lo = mid;
+    }
+  }
+  el.style.fontSize = Math.floor(lo) + "px";
+}
+
+function runAutofit() {
+  if (sizeMode !== "autofit") return;
+  // Fit shajo values in current slot
+  document.querySelectorAll(".shajo-item").forEach(item => {
+    const val = item.querySelector(".shajo-value");
+    if (!val) return;
+    const label = item.querySelector(".shajo-label");
+    const labelW = label ? label.offsetWidth + 16 : 0;
+    const maxW = item.clientWidth - labelW - 32;
+    const maxH = item.clientHeight - 8;
+    if (maxW > 0 && maxH > 0) fitToBox(val, maxW, maxH);
+  });
+  // Fit team chips in waiting slots
+  document.querySelectorAll(".slot-content").forEach(grid => {
+    if (grid.id === "current-content") return;
+    const chips = grid.querySelectorAll(".team-chip");
+    if (chips.length === 0) return;
+    // Reset font first so cells shrink to grid size
+    chips.forEach(c => { c.style.fontSize = "8px"; });
+    void grid.offsetHeight;
+    // Record fixed cell sizes before fitting
+    const sizes = Array.from(chips).map(chip => ({
+      w: chip.clientWidth - 12,
+      h: chip.clientHeight - 8
+    }));
+    chips.forEach((chip, i) => {
+      const { w, h } = sizes[i];
+      if (w > 0 && h > 0) fitToBox(chip, w, h, 2);
+    });
+  });
 }
 
 // ===== Navigation =====
@@ -507,6 +598,32 @@ function setupEvents() {
     e.target.value = "";
   });
 
+  // Size mode
+  const sizeModeSelect = document.getElementById("size-mode");
+  const scaleRow = document.getElementById("scale-row");
+  const savedMode = localStorage.getItem("bulletinboard_sizemode");
+  if (savedMode) {
+    sizeMode = savedMode;
+    sizeModeSelect.value = savedMode;
+  }
+  updateSizeModeUI();
+  sizeModeSelect.addEventListener("change", () => {
+    sizeMode = sizeModeSelect.value;
+    localStorage.setItem("bulletinboard_sizemode", sizeMode);
+    updateSizeModeUI();
+    // Clear inline font-size when switching away from autofit
+    document.querySelectorAll(".shajo-value, .team-chip").forEach(el => el.style.fontSize = "");
+    renderView();
+  });
+  function updateSizeModeUI() {
+    scaleRow.style.display = sizeMode === "scale" ? "flex" : "none";
+    if (sizeMode === "autofit") {
+      document.body.classList.add("autofit");
+    } else {
+      document.body.classList.remove("autofit");
+    }
+  }
+
   // Scale slider
   const scaleSlider = document.getElementById("scale-slider");
   const scaleValue = document.getElementById("scale-value");
@@ -544,6 +661,7 @@ function setupEvents() {
 }
 
 init();
+window.addEventListener("resize", () => { if (sizeMode === "autofit") renderView(); });
 </script>
 </body>
 </html>
