@@ -193,15 +193,7 @@ tr.drag-over td { border-top: 3px solid var(--btn-primary); }
   <div id="data-table-wrapper">
     <table>
       <thead>
-        <tr>
-          <th class="drag-handle"></th>
-          <th class="row-num">#</th>
-          <th>第一射場</th>
-          <th>第二射場</th>
-          <th>第三射場</th>
-          <th>第四射場</th>
-          <th class="row-actions">操作</th>
-        </tr>
+        <tr></tr>
       </thead>
       <tbody id="data-tbody"></tbody>
     </table>
@@ -211,6 +203,20 @@ tr.drag-over td { border-top: 3px solid var(--btn-primary); }
 <div id="settings-panel" class="panel">
   <div class="settings-content">
     <h2>設定</h2>
+    <div class="setting-row">
+      <label>射場数</label>
+      <select id="shajo-count">
+        <option value="4">4射場</option>
+        <option value="2">2射場</option>
+      </select>
+    </div>
+    <div class="setting-row" id="shajo-label2-row" style="display:none">
+      <label>2射場ラベル</label>
+      <select id="shajo-label2">
+        <option value="num">第一 / 第二</option>
+        <option value="mae">前射場 / 後射場</option>
+      </select>
+    </div>
     <div class="setting-row">
       <label>チーム名の文字サイズ</label>
       <select id="size-mode">
@@ -252,19 +258,25 @@ tr.drag-over td { border-top: 3px solid var(--btn-primary); }
 
 <script>
 // ===== State =====
-let data = []; // array of [shajo1, shajo2, shajo3, shajo4]
+let data = []; // array of [shajo1, shajo2, shajo3, shajo4] or [shajo1, shajo2]
 let currentIndex = 0; // which row is "現在の立ち"
 let sizeMode = "scale"; // "scale" or "autofit"
 let currentPipeMode = "on"; // "on" or "off"
+let shajoCount = 4; // 2 or 4
+let shajoLabel2 = "num"; // "num" (第一/第二) or "mae" (前/後)
 
 const STORAGE_KEY = "bulletinboard_data";
 const STORAGE_POS_KEY = "bulletinboard_pos";
 
 // ===== Init =====
+function emptyRow() {
+  return shajoCount === 2 ? ["", ""] : ["", "", "", ""];
+}
+
 function init() {
   loadFromStorage();
   if (data.length === 0) {
-    data.push(["", "", "", ""]);
+    data.push(emptyRow());
   }
   renderView();
   renderTable();
@@ -280,6 +292,10 @@ function saveToStorage() {
 
 function loadFromStorage() {
   try {
+    const sc = parseInt(localStorage.getItem("bulletinboard_shajo_count"));
+    if (sc === 2 || sc === 4) shajoCount = sc;
+    const sl = localStorage.getItem("bulletinboard_shajo_label2");
+    if (sl === "num" || sl === "mae") shajoLabel2 = sl;
     const d = JSON.parse(localStorage.getItem(STORAGE_KEY));
     if (Array.isArray(d)) data = d;
     const p = parseInt(localStorage.getItem(STORAGE_POS_KEY));
@@ -296,15 +312,21 @@ function renderView() {
   requestAnimationFrame(runAutofit);
 }
 
+function getShajoLabels() {
+  if (shajoCount === 4) return ["第一射場", "第二射場", "第三射場", "第四射場"];
+  return shajoLabel2 === "mae" ? ["前射場", "後射場"] : ["第一射場", "第二射場"];
+}
+
 function renderCurrentSlot() {
   const el = document.getElementById("current-content");
   const row = data[currentIndex];
   if (!row) { el.innerHTML = "<span style='opacity:0.4'>データなし</span>"; return; }
-  const labels = ["第一射場", "第二射場", "第三射場", "第四射場"];
+  const labels = getShajoLabels();
   const usePipe = currentPipeMode === "on";
-  el.innerHTML = row.map((val, i) => {
+  const count = shajoCount;
+  el.innerHTML = row.slice(0, count).map((val, i) => {
     const hasPipe = usePipe && val.includes("|");
-    const display = usePipe ? formatText(val) : escHtml(val.replace(/\|/g, ""));
+    const display = hasPipe ? formatTextBr(val) : escHtml(val.replace(/\|/g, ""));
     const rawAttr = usePipe ? val : val.replace(/\|/g, "");
     return `<div class="shajo-item"><div class="shajo-label">${labels[i]}</div><div class="shajo-value${hasPipe ? " has-pipe" : ""}" data-raw="${escHtml(rawAttr)}">${display || "—"}</div></div>`;
   }).join("");
@@ -312,13 +334,21 @@ function renderCurrentSlot() {
 
 function renderWaitingSlot(id, index) {
   const el = document.getElementById(id + "-content");
+  const count = shajoCount;
+  // Update grid layout based on shajo count
+  if (count === 2) {
+    el.style.gridTemplateColumns = "minmax(0, 1fr)";
+    el.style.gridTemplateRows = "minmax(0, 1fr) minmax(0, 1fr)";
+  } else {
+    el.style.gridTemplateColumns = "";
+    el.style.gridTemplateRows = "";
+  }
   const row = data[index];
   if (!row) {
-    el.innerHTML = [0,1,2,3].map(() => `<span class="team-chip" style="opacity:0.3">—</span>`).join("");
+    el.innerHTML = Array.from({length: count}, () => `<span class="team-chip" style="opacity:0.3">—</span>`).join("");
     return;
   }
-  // Always show 4 cells in 2x2 grid
-  el.innerHTML = row.map(v =>
+  el.innerHTML = row.slice(0, count).map(v =>
     `<span class="team-chip${v.includes("|") ? " has-pipe" : ""}" data-raw="${escHtml(v)}">${v.trim() ? formatText(v) : '<span style="opacity:0.3">—</span>'}</span>`
   ).join("");
 }
@@ -337,6 +367,16 @@ function formatText(s) {
     d.textContent = part;
     return d.innerHTML;
   }).join("\u200B");
+}
+
+// Convert | to <br> (forced line break)
+function formatTextBr(s) {
+  if (!s || !s.trim()) return "";
+  return s.split("|").map(part => {
+    const d = document.createElement("div");
+    d.textContent = part;
+    return d.innerHTML;
+  }).join("<br>");
 }
 
 // ===== Autofit =====
@@ -438,8 +478,17 @@ function runAutofit() {
     if (maxW > 0 && maxH > 0) {
       const text = val.textContent.trim();
       const raw = val.dataset.raw || text;
-      const size = calcFitSize(text, raw, shajoFont, maxW, maxH, 2);
-      shajoInfo.push({ el: val, text, raw, font: shajoFont, maxW, maxH, size });
+      const usePipe = currentPipeMode === "on" && raw.includes("|");
+      if (usePipe) {
+        // 改行ON: パイプで改行し、そのレイアウトで収まるサイズ
+        const size = calcFitSize(text, raw, shajoFont, maxW, maxH, 99);
+        shajoInfo.push({ el: val, text, raw, font: shajoFont, maxW, maxH, size });
+      } else {
+        // 改行OFF: 1行に収まるサイズ (maxLines=1)
+        const plainText = text.replace(/\u200B/g, "");
+        const size = calcFitSize(plainText, null, shajoFont, maxW, maxH, 1);
+        shajoInfo.push({ el: val, text: plainText, raw: null, font: shajoFont, maxW, maxH, size });
+      }
     }
   });
   if (shajoInfo.length > 0) {
@@ -512,9 +561,20 @@ function debouncedRenderView() {
   _renderViewTimer = requestAnimationFrame(renderView);
 }
 
+function renderTableHeader() {
+  const thead = document.querySelector("#data-table-wrapper thead tr");
+  const labels = getShajoLabels();
+  // Rebuild header: drag, #, shajo columns..., 操作
+  thead.innerHTML = `<th class="drag-handle"></th><th class="row-num">#</th>` +
+    labels.map(l => `<th>${l}</th>`).join("") +
+    `<th class="row-actions">操作</th>`;
+}
+
 function renderTable() {
+  renderTableHeader();
   const tbody = document.getElementById("data-tbody");
   tbody.innerHTML = "";
+  const count = shajoCount;
   data.forEach((row, ri) => {
     const tr = document.createElement("tr");
     tr.draggable = true;
@@ -532,8 +592,8 @@ function renderTable() {
     tdNum.className = "row-num";
     tdNum.textContent = ri + 1;
     tr.appendChild(tdNum);
-    // 4 shajo columns
-    for (let ci = 0; ci < 4; ci++) {
+    // shajo columns
+    for (let ci = 0; ci < count; ci++) {
       const td = document.createElement("td");
       const input = document.createElement("input");
       input.type = "text";
@@ -633,10 +693,10 @@ function importCSV(file) {
     const text = e.target.result;
     const rows = parseCSV(text);
     if (rows.length === 0) return;
+    const count = shajoCount;
     data = rows.map(r => {
-      // Pad to 4 columns
-      while (r.length < 4) r.push("");
-      return r.slice(0, 4);
+      while (r.length < count) r.push("");
+      return r.slice(0, count);
     });
     currentIndex = 0;
     renderView();
@@ -704,7 +764,7 @@ function setupEvents() {
   document.getElementById("btn-prev").addEventListener("click", () => moveTo(currentIndex - 1));
   document.getElementById("btn-next").addEventListener("click", () => moveTo(currentIndex + 1));
   document.getElementById("btn-add-row").addEventListener("click", () => {
-    data.push(["", "", "", ""]);
+    data.push(emptyRow());
     renderTable();
     updatePosIndicator();
     saveToStorage();
@@ -723,6 +783,38 @@ function setupEvents() {
   document.getElementById("file-input").addEventListener("change", (e) => {
     if (e.target.files[0]) importCSV(e.target.files[0]);
     e.target.value = "";
+  });
+
+  // Shajo count
+  const shajoCountSelect = document.getElementById("shajo-count");
+  const shajoLabel2Select = document.getElementById("shajo-label2");
+  const shajoLabel2Row = document.getElementById("shajo-label2-row");
+  shajoCountSelect.value = String(shajoCount);
+  shajoLabel2Select.value = shajoLabel2;
+  shajoLabel2Row.style.display = shajoCount === 2 ? "flex" : "none";
+  shajoCountSelect.addEventListener("change", () => {
+    const newCount = parseInt(shajoCountSelect.value);
+    if (newCount === shajoCount) return;
+    if (!confirm("射場数を変更すると、入力済みデータがリセットされます。よろしいですか？")) {
+      shajoCountSelect.value = String(shajoCount);
+      return;
+    }
+    shajoCount = newCount;
+    shajoLabel2Row.style.display = shajoCount === 2 ? "flex" : "none";
+    localStorage.setItem("bulletinboard_shajo_count", String(shajoCount));
+    // Reset data
+    data = [emptyRow()];
+    currentIndex = 0;
+    renderView();
+    renderTable();
+    updatePosIndicator();
+    saveToStorage();
+  });
+  shajoLabel2Select.addEventListener("change", () => {
+    shajoLabel2 = shajoLabel2Select.value;
+    localStorage.setItem("bulletinboard_shajo_label2", shajoLabel2);
+    renderView();
+    renderTable();
   });
 
   // Current pipe mode
@@ -855,6 +947,14 @@ if (isViewOnly) {
     }
     if (e.key === "bulletinboard_pipemode") {
       currentPipeMode = e.newValue;
+      renderView();
+    }
+    if (e.key === "bulletinboard_shajo_count") {
+      shajoCount = parseInt(e.newValue) || 4;
+      renderView();
+    }
+    if (e.key === "bulletinboard_shajo_label2") {
+      shajoLabel2 = e.newValue || "num";
       renderView();
     }
   });
