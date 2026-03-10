@@ -10,6 +10,7 @@
 /* ===== Theme variables ===== */
 :root {
   --scale: 1;
+  --label-scale: 1;
   --bg: #1a1a2e; --text: #eee;
   --tab-bg: #16213e; --tab-border: #0f3460; --tab-inactive: #8899aa; --tab-active-bg: #0f3460; --tab-active-text: #fff;
   --current-bg1: #0f3460; --current-bg2: #16213e; --current-border: #e94560; --current-label: #e94560;
@@ -57,12 +58,12 @@ body { font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif; bac
 
 /* Left: 現在の立ち takes 60% width, full height, vertical text */
 .slot.current { width: 60%; flex: none; height: 100%; background: linear-gradient(135deg, var(--current-bg1), var(--current-bg2)); border: 3px solid var(--current-border); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; }
-.slot.current .slot-label { font-size: calc(2rem * var(--scale)); color: var(--current-label); font-weight: bold; opacity: 0.8; margin-bottom: 6px; text-align: center; }
+.slot.current .slot-label { font-size: calc(2rem * var(--label-scale)); color: var(--current-label); font-weight: bold; opacity: 0.8; margin-bottom: 6px; text-align: center; }
 .slot.current .slot-content { display: flex; flex-direction: column; gap: 4px; flex: 1; }
 
 /* 射場 items inside current - horizontal rows, label left, value right */
 .shajo-item { flex: 1; min-width: 0; background: var(--shajo-bg); border: 2px solid var(--shajo-border); border-radius: 10px; padding: 4px 16px; display: flex; flex-direction: row; align-items: center; gap: 16px; }
-.shajo-item .shajo-label { font-size: calc(1.3rem * var(--scale)); opacity: 0.5; white-space: nowrap; min-width: 5em; }
+.shajo-item .shajo-label { font-size: calc(1.3rem * var(--label-scale)); opacity: 0.5; white-space: nowrap; min-width: 5em; }
 .shajo-item .shajo-value { font-size: calc(clamp(1.5rem, 5vh, 3.5rem) * var(--scale)); word-break: break-word; line-height: 1.2; font-weight: bold; flex: 1; overflow: hidden; }
 /* autofit mode */
 .autofit .shajo-item .shajo-value { font-size: unset; text-wrap: balance; }
@@ -82,15 +83,15 @@ body { font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif; bac
 
 /* 控え slots - proportional sizing */
 .slot.waiting1 { flex: 3; background: linear-gradient(135deg, var(--w1-bg1), var(--w1-bg2)); border: 2px solid var(--w1-border); }
-.slot.waiting1 .slot-label { font-size: calc(1.1rem * var(--scale)); color: var(--w1-border); }
+.slot.waiting1 .slot-label { font-size: calc(1.1rem * var(--label-scale)); color: var(--w1-border); }
 .slot.waiting1 .slot-content { font-size: calc(1.4rem * var(--scale)); }
 
 .slot.waiting2 { flex: 2; background: linear-gradient(135deg, var(--w2-bg1), var(--w2-bg2)); border: 2px solid var(--w2-border); }
-.slot.waiting2 .slot-label { font-size: calc(1rem * var(--scale)); color: var(--w2-border); }
+.slot.waiting2 .slot-label { font-size: calc(1rem * var(--label-scale)); color: var(--w2-border); }
 .slot.waiting2 .slot-content { font-size: calc(1.2rem * var(--scale)); }
 
 .slot.waiting3 { flex: 1.5; background: linear-gradient(135deg, var(--w3-bg1), var(--w3-bg2)); border: 2px solid var(--w3-border); }
-.slot.waiting3 .slot-label { font-size: calc(0.9rem * var(--scale)); color: var(--w3-border); }
+.slot.waiting3 .slot-label { font-size: calc(0.9rem * var(--label-scale)); color: var(--w3-border); }
 .slot.waiting3 .slot-content { font-size: calc(1rem * var(--scale)); }
 
 /* Team name in waiting slots - fill each grid cell, never overflow */
@@ -206,22 +207,31 @@ tr.drag-over td { border-top: 3px solid var(--btn-primary); }
   <div class="settings-content">
     <h2>設定</h2>
     <div class="setting-row">
-      <label>文字サイズ方式</label>
+      <label>チーム名の文字サイズ</label>
       <select id="size-mode">
         <option value="scale">スライダー（手動）</option>
         <option value="autofit">自動フィット（枠に合わせる）</option>
       </select>
     </div>
     <div class="setting-row" id="scale-row">
-      <label for="scale-slider">文字サイズ（全体）</label>
+      <label for="scale-slider">チーム名サイズ</label>
       <input type="range" id="scale-slider" min="0.5" max="2.5" step="0.05" value="1">
       <span id="scale-value">1.00x</span>
       <button class="btn btn-secondary btn-small" id="scale-reset">リセット</button>
     </div>
+    <div class="setting-row">
+      <label for="label-slider">ラベルサイズ</label>
+      <input type="range" id="label-slider" min="0.5" max="2.5" step="0.05" value="1">
+      <span id="label-value">1.00x</span>
+      <button class="btn btn-secondary btn-small" id="label-reset">リセット</button>
+    </div>
+    <h2>使い方</h2>
     <div class="setting-hint">
-      <h3>ヒント</h3>
-      <p>チーム名に <code>|</code>（パイプ）を入れると、改行が必要な場合にその位置で優先的に改行されます。改行が不要な場合は無視されます。</p>
-      <p>例: <code>東京慈恵会|医科大学A</code></p>
+      <p><b>表示タブ</b>: 左に「現在の立ち」、右に控え3つを表示します。</p>
+      <p><b>← →キー</b>: 立ちを進める・戻す（音が鳴ります）。</p>
+      <p><b>編集タブ</b>: データの追加・削除・並び替え（ドラッグ）ができます。</p>
+      <p><b>CSV</b>: インポート・エクスポートに対応。行=立ち、列=射場。</p>
+      <p><b>改行ヒント</b>: チーム名に <code>|</code> を入れると、その位置で優先的に改行されます。<br>例: <code>東京慈恵会|医科大学A</code></p>
     </div>
   </div>
 </div>
@@ -665,6 +675,30 @@ function setupEvents() {
     document.documentElement.style.setProperty("--scale", 1);
     scaleValue.textContent = "1.00x";
     localStorage.setItem("bulletinboard_scale", "1");
+  });
+
+  // Label scale slider
+  const labelSlider = document.getElementById("label-slider");
+  const labelValue = document.getElementById("label-value");
+  const savedLabel = localStorage.getItem("bulletinboard_label_scale");
+  if (savedLabel) {
+    labelSlider.value = savedLabel;
+    document.documentElement.style.setProperty("--label-scale", savedLabel);
+    labelValue.textContent = parseFloat(savedLabel).toFixed(2) + "x";
+  }
+  labelSlider.addEventListener("input", () => {
+    const v = labelSlider.value;
+    document.documentElement.style.setProperty("--label-scale", v);
+    labelValue.textContent = parseFloat(v).toFixed(2) + "x";
+    localStorage.setItem("bulletinboard_label_scale", v);
+    if (sizeMode === "autofit") renderView();
+  });
+  document.getElementById("label-reset").addEventListener("click", () => {
+    labelSlider.value = 1;
+    document.documentElement.style.setProperty("--label-scale", 1);
+    labelValue.textContent = "1.00x";
+    localStorage.setItem("bulletinboard_label_scale", "1");
+    if (sizeMode === "autofit") renderView();
   });
 
   // Theme toggle
