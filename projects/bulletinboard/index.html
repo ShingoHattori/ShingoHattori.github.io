@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>掲示板</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* ===== Theme variables ===== */
+:root {
+  --scale: 1;
+  --bg: #1a1a2e; --text: #eee;
+  --tab-bg: #16213e; --tab-border: #0f3460; --tab-inactive: #8899aa; --tab-active-bg: #0f3460; --tab-active-text: #fff;
+  --current-bg1: #0f3460; --current-bg2: #16213e; --current-border: #e94560; --current-label: #e94560;
+  --shajo-bg: rgba(233,69,96,0.12); --shajo-border: rgba(233,69,96,0.35);
+  --w1-border: #4e9af5; --w1-bg1: #1a1a3e; --w1-bg2: #16213e;
+  --w2-border: #45b7aa; --w2-bg1: #1a1a3e; --w2-bg2: #16213e;
+  --w3-border: #9b7dcf; --w3-bg1: #1a1a3e; --w3-bg2: #16213e;
+  --chip-bg: rgba(255,255,255,0.08);
+  --edit-bg: #16213e; --edit-border: #333; --input-border: #444; --input-text: #eee;
+  --btn-primary: #e94560; --btn-secondary: #0f3460;
+  --row-active: rgba(233,69,96,0.2); --row-num-color: #888;
+  --th-bg: #0f3460;
+}
+:root.light {
+  --bg: #f0f2f5; --text: #222;
+  --tab-bg: #dde; --tab-border: #bbc; --tab-inactive: #667; --tab-active-bg: #fff; --tab-active-text: #222;
+  --current-bg1: #fff; --current-bg2: #f5f5fa; --current-border: #d42; --current-label: #d42;
+  --shajo-bg: rgba(212,66,34,0.08); --shajo-border: rgba(212,66,34,0.25);
+  --w1-border: #3a7fd5; --w1-bg1: #fff; --w1-bg2: #f5f7fa;
+  --w2-border: #2a9a8e; --w2-bg1: #fff; --w2-bg2: #f5faf9;
+  --w3-border: #7b5daf; --w3-bg1: #fff; --w3-bg2: #f8f5fa;
+  --chip-bg: rgba(0,0,0,0.06);
+  --edit-bg: #fff; --edit-border: #ccc; --input-border: #aaa; --input-text: #222;
+  --btn-primary: #d42; --btn-secondary: #3a7fd5;
+  --row-active: rgba(212,66,34,0.12); --row-num-color: #999;
+  --th-bg: #3a7fd5;
+}
+
+body { font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; transition: background 0.3s, color 0.3s; }
+
+/* Tab bar */
+.tab-bar { display: flex; background: var(--tab-bg); border-bottom: 2px solid var(--tab-border); }
+.tab-btn { flex: 1; padding: 12px; text-align: center; cursor: pointer; font-size: 1rem; font-weight: bold; border: none; background: transparent; color: var(--tab-inactive); transition: all 0.2s; }
+.tab-btn.active { color: var(--tab-active-text); background: var(--tab-active-bg); }
+.tab-btn:hover { opacity: 0.8; }
+.theme-toggle { padding: 8px 14px; cursor: pointer; font-size: 1.2rem; border: none; background: transparent; color: var(--tab-inactive); transition: all 0.2s; }
+.theme-toggle:hover { opacity: 0.8; }
+
+/* Panels */
+.panel { display: none; flex: 1; overflow: auto; }
+.panel.active { display: flex; flex-direction: column; }
+
+/* ===== VIEW PANEL ===== */
+#view-panel { padding: 6px; gap: 0; flex-direction: row; }
+
+/* Left: 現在の立ち takes 60% width, full height, vertical text */
+.slot.current { width: 60%; flex: none; height: 100%; background: linear-gradient(135deg, var(--current-bg1), var(--current-bg2)); border: 3px solid var(--current-border); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; }
+.slot.current .slot-label { font-size: calc(2rem * var(--scale)); color: var(--current-label); font-weight: bold; opacity: 0.8; margin-bottom: 6px; text-align: center; }
+.slot.current .slot-content { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+
+/* 射場 items inside current - horizontal rows, label left, value right */
+.shajo-item { flex: 1; min-width: 0; background: var(--shajo-bg); border: 2px solid var(--shajo-border); border-radius: 10px; padding: 4px 16px; display: flex; flex-direction: row; align-items: center; gap: 16px; }
+.shajo-item .shajo-label { font-size: calc(1.3rem * var(--scale)); opacity: 0.5; white-space: nowrap; min-width: 5em; }
+.shajo-item .shajo-value { font-size: calc(clamp(1.5rem, 5vh, 3.5rem) * var(--scale)); word-break: break-word; line-height: 1.2; font-weight: bold; flex: 1; }
+
+/* Right: 控え column takes 40% width, 3 rows stacked vertically */
+.waiting-column { width: 40%; height: 100%; display: flex; flex-direction: column; gap: 4px; padding-left: 6px; }
+
+.slot { border-radius: 10px; padding: 8px 10px; display: flex; flex-direction: column; overflow: hidden; }
+.slot-label { font-weight: bold; opacity: 0.7; margin-bottom: 4px; white-space: nowrap; }
+/* Each slot's content is a 2x2 grid for the 4 teams */
+.slot-content { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 4px; flex: 1; }
+
+/* 控え slots - proportional sizing */
+.slot.waiting1 { flex: 3; background: linear-gradient(135deg, var(--w1-bg1), var(--w1-bg2)); border: 2px solid var(--w1-border); }
+.slot.waiting1 .slot-label { font-size: calc(1.1rem * var(--scale)); color: var(--w1-border); }
+.slot.waiting1 .slot-content { font-size: calc(1.4rem * var(--scale)); }
+
+.slot.waiting2 { flex: 2; background: linear-gradient(135deg, var(--w2-bg1), var(--w2-bg2)); border: 2px solid var(--w2-border); }
+.slot.waiting2 .slot-label { font-size: calc(1rem * var(--scale)); color: var(--w2-border); }
+.slot.waiting2 .slot-content { font-size: calc(1.2rem * var(--scale)); }
+
+.slot.waiting3 { flex: 1.5; background: linear-gradient(135deg, var(--w3-bg1), var(--w3-bg2)); border: 2px solid var(--w3-border); }
+.slot.waiting3 .slot-label { font-size: calc(0.9rem * var(--scale)); color: var(--w3-border); }
+.slot.waiting3 .slot-content { font-size: calc(1rem * var(--scale)); }
+
+/* Team name in waiting slots - fill each grid cell */
+.team-chip { background: var(--chip-bg); border-radius: 6px; padding: 2px 6px; word-break: break-word; display: flex; align-items: center; justify-content: center; text-align: center; }
+
+/* Navigation hint */
+.nav-hint { position: fixed; bottom: 4px; right: 10px; font-size: 0.75rem; opacity: 0.3; }
+
+/* ===== EDIT PANEL ===== */
+#edit-panel { padding: 16px; gap: 12px; }
+.edit-section { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.edit-section label { font-weight: bold; min-width: 100px; }
+
+.btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-weight: bold; transition: opacity 0.2s; }
+.btn:hover { opacity: 0.8; }
+.btn-primary { background: var(--btn-primary); color: #fff; }
+.btn-secondary { background: var(--btn-secondary); color: #fff; }
+.btn-small { padding: 6px 12px; font-size: 0.8rem; }
+
+/* Data table */
+#data-table-wrapper { flex: 1; overflow: auto; margin-top: 8px; }
+table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+th, td { border: 1px solid var(--edit-border); padding: 6px 8px; text-align: center; }
+th { background: var(--th-bg); color: #fff; position: sticky; top: 0; z-index: 1; }
+td input { width: 100%; background: transparent; border: 1px solid var(--input-border); color: var(--input-text); padding: 4px; border-radius: 4px; font-size: 0.85rem; text-align: center; }
+td input:focus { border-color: var(--btn-primary); outline: none; }
+tr.active-row { background: var(--row-active); }
+.row-num { width: 40px; color: var(--row-num-color); font-size: 0.8rem; }
+.row-actions { width: 60px; }
+.drag-handle { width: 30px; cursor: grab; text-align: center; color: var(--row-num-color); font-size: 1.1rem; user-select: none; }
+.drag-handle:active { cursor: grabbing; }
+tr.drag-over td { border-top: 3px solid var(--btn-primary); }
+
+/* Position indicator */
+.position-display { text-align: center; padding: 8px; background: var(--edit-bg); border-radius: 8px; margin-bottom: 8px; }
+.position-display span { font-size: 1.2rem; font-weight: bold; color: var(--btn-primary); }
+
+/* ===== SETTINGS PANEL ===== */
+.settings-content { padding: 24px; max-width: 500px; }
+.settings-content h2 { margin-bottom: 20px; }
+.setting-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.setting-row label { min-width: 140px; font-weight: bold; }
+.setting-row input[type="range"] { flex: 1; accent-color: var(--btn-primary); }
+.setting-row span { min-width: 50px; text-align: right; font-family: monospace; }
+</style>
+</head>
+<body>
+
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="view">表示</button>
+  <button class="tab-btn" data-tab="edit">編集</button>
+  <button class="tab-btn" data-tab="settings">設定</button>
+  <button class="theme-toggle" id="theme-toggle" title="テーマ切替">🌙</button>
+</div>
+
+<div id="view-panel" class="panel active">
+  <div class="slot current" id="slot-current">
+    <div class="slot-label">現在の立ち</div>
+    <div class="slot-content" id="current-content"></div>
+  </div>
+  <div class="waiting-column">
+    <div class="slot waiting1" id="slot-w1">
+      <div class="slot-label">第一控え</div>
+      <div class="slot-content" id="w1-content"></div>
+    </div>
+    <div class="slot waiting2" id="slot-w2">
+      <div class="slot-label">第二控え</div>
+      <div class="slot-content" id="w2-content"></div>
+    </div>
+    <div class="slot waiting3" id="slot-w3">
+      <div class="slot-label">第三控え</div>
+      <div class="slot-content" id="w3-content"></div>
+    </div>
+  </div>
+  <div class="nav-hint">← → キーで立ちを切り替え</div>
+</div>
+
+<div id="edit-panel" class="panel">
+  <div class="position-display">
+    現在の位置: <span id="pos-indicator">1</span> / <span id="pos-total">0</span>
+  </div>
+  <div class="edit-section">
+    <button class="btn btn-primary btn-small" id="btn-prev">◀ 前へ</button>
+    <button class="btn btn-primary btn-small" id="btn-next">次へ ▶</button>
+    <button class="btn btn-secondary btn-small" id="btn-add-row">＋ 行追加</button>
+    <button class="btn btn-secondary btn-small" id="btn-import">CSVインポート</button>
+    <button class="btn btn-secondary btn-small" id="btn-export">CSVエクスポート</button>
+  </div>
+  <input type="file" id="file-input" accept=".csv" style="display:none;">
+  <div id="data-table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th class="drag-handle"></th>
+          <th class="row-num">#</th>
+          <th>第一射場</th>
+          <th>第二射場</th>
+          <th>第三射場</th>
+          <th>第四射場</th>
+          <th class="row-actions">操作</th>
+        </tr>
+      </thead>
+      <tbody id="data-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div id="settings-panel" class="panel">
+  <div class="settings-content">
+    <h2>設定</h2>
+    <div class="setting-row">
+      <label for="scale-slider">文字サイズ（全体）</label>
+      <input type="range" id="scale-slider" min="0.5" max="2.5" step="0.05" value="1">
+      <span id="scale-value">1.00x</span>
+      <button class="btn btn-secondary btn-small" id="scale-reset">リセット</button>
+    </div>
+  </div>
+</div>
+
+<audio id="tone-audio" src="tone.m4a" preload="auto"></audio>
+
+<script>
+// ===== State =====
+let data = []; // array of [shajo1, shajo2, shajo3, shajo4]
+let currentIndex = 0; // which row is "現在の立ち"
+
+const STORAGE_KEY = "bulletinboard_data";
+const STORAGE_POS_KEY = "bulletinboard_pos";
+
+// ===== Init =====
+function init() {
+  loadFromStorage();
+  if (data.length === 0) {
+    data.push(["", "", "", ""]);
+  }
+  renderView();
+  renderTable();
+  updatePosIndicator();
+  setupEvents();
+}
+
+// ===== Storage =====
+function saveToStorage() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  localStorage.setItem(STORAGE_POS_KEY, String(currentIndex));
+}
+
+function loadFromStorage() {
+  try {
+    const d = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (Array.isArray(d)) data = d;
+    const p = parseInt(localStorage.getItem(STORAGE_POS_KEY));
+    if (!isNaN(p)) currentIndex = p;
+  } catch(e) {}
+}
+
+// ===== View rendering =====
+function renderView() {
+  renderCurrentSlot();
+  renderWaitingSlot("w1", currentIndex + 1);
+  renderWaitingSlot("w2", currentIndex + 2);
+  renderWaitingSlot("w3", currentIndex + 3);
+}
+
+function renderCurrentSlot() {
+  const el = document.getElementById("current-content");
+  const row = data[currentIndex];
+  if (!row) { el.innerHTML = "<span style='opacity:0.4'>データなし</span>"; return; }
+  const labels = ["第一射場", "第二射場", "第三射場", "第四射場"];
+  el.innerHTML = row.map((val, i) =>
+    `<div class="shajo-item"><div class="shajo-label">${labels[i]}</div><div class="shajo-value">${escHtml(val) || "—"}</div></div>`
+  ).join("");
+}
+
+function renderWaitingSlot(id, index) {
+  const el = document.getElementById(id + "-content");
+  const row = data[index];
+  if (!row) {
+    el.innerHTML = [0,1,2,3].map(() => `<span class="team-chip" style="opacity:0.3">—</span>`).join("");
+    return;
+  }
+  // Always show 4 cells in 2x2 grid
+  el.innerHTML = row.map(v =>
+    `<span class="team-chip">${v.trim() ? escHtml(v) : '<span style="opacity:0.3">—</span>'}</span>`
+  ).join("");
+}
+
+function escHtml(s) {
+  const d = document.createElement("div");
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ===== Navigation =====
+function moveTo(newIndex) {
+  if (newIndex < 0 || newIndex >= data.length) return;
+  if (newIndex === currentIndex) return;
+  currentIndex = newIndex;
+  playTone();
+  renderView();
+  renderTable();
+  updatePosIndicator();
+  saveToStorage();
+}
+
+function playTone() {
+  const audio = document.getElementById("tone-audio");
+  audio.currentTime = 0;
+  audio.play().catch(() => {});
+}
+
+// ===== Edit table =====
+let dragSrcIndex = null;
+
+function renderTable() {
+  const tbody = document.getElementById("data-tbody");
+  tbody.innerHTML = "";
+  data.forEach((row, ri) => {
+    const tr = document.createElement("tr");
+    tr.draggable = true;
+    tr.dataset.index = ri;
+    if (ri === currentIndex) tr.classList.add("active-row");
+
+    // Drag handle
+    const tdDrag = document.createElement("td");
+    tdDrag.className = "drag-handle";
+    tdDrag.textContent = "≡";
+    tr.appendChild(tdDrag);
+
+    // Row number
+    const tdNum = document.createElement("td");
+    tdNum.className = "row-num";
+    tdNum.textContent = ri + 1;
+    tr.appendChild(tdNum);
+    // 4 shajo columns
+    for (let ci = 0; ci < 4; ci++) {
+      const td = document.createElement("td");
+      const input = document.createElement("input");
+      input.type = "text";
+      input.value = row[ci] || "";
+      input.addEventListener("input", () => {
+        data[ri][ci] = input.value;
+        renderView();
+        saveToStorage();
+      });
+      td.appendChild(input);
+      tr.appendChild(td);
+    }
+    // Actions
+    const tdAct = document.createElement("td");
+    tdAct.className = "row-actions";
+    const delBtn = document.createElement("button");
+    delBtn.className = "btn btn-small";
+    delBtn.style.cssText = "background:#a33;color:#fff;padding:2px 8px;font-size:0.75rem;";
+    delBtn.textContent = "✕";
+    delBtn.addEventListener("click", () => {
+      if (data.length <= 1) return;
+      data.splice(ri, 1);
+      if (currentIndex >= data.length) currentIndex = data.length - 1;
+      renderView();
+      renderTable();
+      updatePosIndicator();
+      saveToStorage();
+    });
+    tdAct.appendChild(delBtn);
+    tr.appendChild(tdAct);
+
+    // Drag events
+    tr.addEventListener("dragstart", (e) => {
+      dragSrcIndex = ri;
+      tr.style.opacity = "0.4";
+      e.dataTransfer.effectAllowed = "move";
+    });
+    tr.addEventListener("dragend", () => {
+      tr.style.opacity = "";
+      tbody.querySelectorAll("tr").forEach(r => r.classList.remove("drag-over"));
+    });
+    tr.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      tbody.querySelectorAll("tr").forEach(r => r.classList.remove("drag-over"));
+      tr.classList.add("drag-over");
+    });
+    tr.addEventListener("drop", (e) => {
+      e.preventDefault();
+      const dst = ri;
+      if (dragSrcIndex === null || dragSrcIndex === dst) return;
+      const moved = data.splice(dragSrcIndex, 1)[0];
+      data.splice(dst, 0, moved);
+      // Update currentIndex to follow the active row
+      if (currentIndex === dragSrcIndex) {
+        currentIndex = dst;
+      } else if (dragSrcIndex < currentIndex && dst >= currentIndex) {
+        currentIndex--;
+      } else if (dragSrcIndex > currentIndex && dst <= currentIndex) {
+        currentIndex++;
+      }
+      renderView();
+      renderTable();
+      updatePosIndicator();
+      saveToStorage();
+    });
+
+    tbody.appendChild(tr);
+  });
+}
+
+function updatePosIndicator() {
+  document.getElementById("pos-indicator").textContent = currentIndex + 1;
+  document.getElementById("pos-total").textContent = data.length;
+}
+
+// ===== CSV =====
+function exportCSV() {
+  const lines = data.map(row => row.map(cell => {
+    if (cell.includes(",") || cell.includes('"') || cell.includes("\n")) {
+      return '"' + cell.replace(/"/g, '""') + '"';
+    }
+    return cell;
+  }).join(","));
+  const blob = new Blob([lines.join("\n")], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "bulletinboard.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importCSV(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const text = e.target.result;
+    const rows = parseCSV(text);
+    if (rows.length === 0) return;
+    data = rows.map(r => {
+      // Pad to 4 columns
+      while (r.length < 4) r.push("");
+      return r.slice(0, 4);
+    });
+    currentIndex = 0;
+    renderView();
+    renderTable();
+    updatePosIndicator();
+    saveToStorage();
+  };
+  reader.readAsText(file);
+}
+
+function parseCSV(text) {
+  const rows = [];
+  let current = [];
+  let cell = "";
+  let inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (inQuotes) {
+      if (ch === '"') {
+        if (text[i+1] === '"') { cell += '"'; i++; }
+        else { inQuotes = false; }
+      } else { cell += ch; }
+    } else {
+      if (ch === '"') { inQuotes = true; }
+      else if (ch === ',') { current.push(cell); cell = ""; }
+      else if (ch === '\n' || ch === '\r') {
+        if (ch === '\r' && text[i+1] === '\n') i++;
+        current.push(cell); cell = "";
+        if (current.some(c => c !== "")) rows.push(current);
+        current = [];
+      } else { cell += ch; }
+    }
+  }
+  current.push(cell);
+  if (current.some(c => c !== "")) rows.push(current);
+  return rows;
+}
+
+// ===== Events =====
+function setupEvents() {
+  // Tab switching
+  document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+      btn.classList.add("active");
+      document.getElementById(btn.dataset.tab + "-panel").classList.add("active");
+    });
+  });
+
+  // Arrow keys
+  document.addEventListener("keydown", (e) => {
+    // Don't intercept when typing in inputs
+    if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+      e.preventDefault();
+      moveTo(currentIndex + 1);
+    } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+      e.preventDefault();
+      moveTo(currentIndex - 1);
+    }
+  });
+
+  // Edit buttons
+  document.getElementById("btn-prev").addEventListener("click", () => moveTo(currentIndex - 1));
+  document.getElementById("btn-next").addEventListener("click", () => moveTo(currentIndex + 1));
+  document.getElementById("btn-add-row").addEventListener("click", () => {
+    data.push(["", "", "", ""]);
+    renderTable();
+    updatePosIndicator();
+    saveToStorage();
+    // Scroll to bottom
+    const wrapper = document.getElementById("data-table-wrapper");
+    wrapper.scrollTop = wrapper.scrollHeight;
+  });
+  document.getElementById("btn-export").addEventListener("click", exportCSV);
+  document.getElementById("btn-import").addEventListener("click", () => {
+    document.getElementById("file-input").click();
+  });
+  document.getElementById("file-input").addEventListener("change", (e) => {
+    if (e.target.files[0]) importCSV(e.target.files[0]);
+    e.target.value = "";
+  });
+
+  // Scale slider
+  const scaleSlider = document.getElementById("scale-slider");
+  const scaleValue = document.getElementById("scale-value");
+  const savedScale = localStorage.getItem("bulletinboard_scale");
+  if (savedScale) {
+    scaleSlider.value = savedScale;
+    document.documentElement.style.setProperty("--scale", savedScale);
+    scaleValue.textContent = parseFloat(savedScale).toFixed(2) + "x";
+  }
+  scaleSlider.addEventListener("input", () => {
+    const v = scaleSlider.value;
+    document.documentElement.style.setProperty("--scale", v);
+    scaleValue.textContent = parseFloat(v).toFixed(2) + "x";
+    localStorage.setItem("bulletinboard_scale", v);
+  });
+  document.getElementById("scale-reset").addEventListener("click", () => {
+    scaleSlider.value = 1;
+    document.documentElement.style.setProperty("--scale", 1);
+    scaleValue.textContent = "1.00x";
+    localStorage.setItem("bulletinboard_scale", "1");
+  });
+
+  // Theme toggle
+  const themeBtn = document.getElementById("theme-toggle");
+  if (localStorage.getItem("bulletinboard_theme") === "light") {
+    document.documentElement.classList.add("light");
+    themeBtn.textContent = "☀️";
+  }
+  themeBtn.addEventListener("click", () => {
+    document.documentElement.classList.toggle("light");
+    const isLight = document.documentElement.classList.contains("light");
+    themeBtn.textContent = isLight ? "☀️" : "🌙";
+    localStorage.setItem("bulletinboard_theme", isLight ? "light" : "dark");
+  });
+}
+
+init();
+</script>
+</body>
+</html>
