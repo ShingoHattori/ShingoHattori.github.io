@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Silent Camera</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #000;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .viewfinder {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    #canvas { display: none; }
+
+    .controls {
+      background: rgba(0, 0, 0, 0.85);
+      padding: 16px 0 max(16px, env(safe-area-inset-bottom));
+      display: flex;
+      align-items: center;
+      justify-content: space-evenly;
+    }
+
+    .btn {
+      background: none;
+      border: none;
+      color: #fff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn-shutter {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      border: 4px solid #fff;
+      background: rgba(255, 255, 255, 0.15);
+      transition: transform 0.08s;
+    }
+
+    .btn-shutter:active {
+      transform: scale(0.9);
+      background: rgba(255, 255, 255, 0.4);
+    }
+
+    .btn-switch, .btn-gallery {
+      width: 44px;
+      height: 44px;
+    }
+
+    .btn-switch svg, .btn-gallery svg {
+      width: 28px;
+      height: 28px;
+    }
+
+    /* Flash overlay */
+    .flash {
+      position: fixed;
+      inset: 0;
+      background: #fff;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    .flash.active {
+      animation: flash 0.15s ease-out;
+    }
+
+    @keyframes flash {
+      0% { opacity: 0.6; }
+      100% { opacity: 0; }
+    }
+
+    /* Preview modal */
+    .preview-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 200;
+      display: none;
+      flex-direction: column;
+    }
+
+    .preview-overlay.active {
+      display: flex;
+    }
+
+    .preview-header {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 16px;
+      padding-top: max(12px, env(safe-area-inset-top));
+    }
+
+    .preview-header .btn {
+      font-size: 16px;
+      padding: 8px 12px;
+    }
+
+    .preview-image-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      padding: 8px;
+    }
+
+    .preview-image-container img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: 4px;
+    }
+
+    .preview-actions {
+      display: flex;
+      justify-content: space-evenly;
+      padding: 16px 0 max(16px, env(safe-area-inset-bottom));
+    }
+
+    .preview-actions .btn {
+      flex-direction: column;
+      gap: 4px;
+      font-size: 12px;
+    }
+
+    .preview-actions .btn svg {
+      width: 28px;
+      height: 28px;
+    }
+
+    /* Thumbnail */
+    .thumbnail-wrapper {
+      width: 44px;
+      height: 44px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 2px solid rgba(255,255,255,0.5);
+    }
+
+    .thumbnail-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .no-photo {
+      width: 100%;
+      height: 100%;
+      background: #333;
+    }
+
+    /* Error state */
+    .error-message {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 32px;
+      font-size: 16px;
+      line-height: 1.6;
+      color: #aaa;
+    }
+  </style>
+</head>
+<body>
+  <div class="viewfinder">
+    <video id="video" autoplay playsinline muted></video>
+    <div class="error-message" id="error"></div>
+  </div>
+  <canvas id="canvas"></canvas>
+  <div class="flash" id="flash"></div>
+
+  <div class="controls">
+    <button class="btn btn-gallery" id="btnGallery" title="Last photo">
+      <div class="thumbnail-wrapper">
+        <div class="no-photo" id="noPhoto"></div>
+        <img id="thumbnail" style="display:none" alt="Last photo">
+      </div>
+    </button>
+
+    <button class="btn btn-shutter" id="btnShutter" title="Take photo"></button>
+
+    <button class="btn btn-switch" id="btnSwitch" title="Switch camera">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M16 3h5v5"/><path d="M8 21H3v-5"/>
+        <path d="M21 3l-7 7"/><path d="M3 21l7-7"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Preview -->
+  <div class="preview-overlay" id="preview">
+    <div class="preview-header">
+      <button class="btn" id="btnBack">&#x2190; Back</button>
+      <button class="btn" id="btnDelete" style="color:#ff4444">Delete</button>
+    </div>
+    <div class="preview-image-container">
+      <img id="previewImage" alt="Preview">
+    </div>
+    <div class="preview-actions">
+      <button class="btn" id="btnShare">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+          <polyline points="16 6 12 2 8 6"/>
+          <line x1="12" y1="2" x2="12" y2="15"/>
+        </svg>
+        Share
+      </button>
+      <button class="btn" id="btnDownload">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Save
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const flash = document.getElementById('flash');
+    const btnShutter = document.getElementById('btnShutter');
+    const btnSwitch = document.getElementById('btnSwitch');
+    const btnGallery = document.getElementById('btnGallery');
+    const thumbnail = document.getElementById('thumbnail');
+    const noPhoto = document.getElementById('noPhoto');
+    const preview = document.getElementById('preview');
+    const previewImage = document.getElementById('previewImage');
+    const btnBack = document.getElementById('btnBack');
+    const btnShare = document.getElementById('btnShare');
+    const btnDownload = document.getElementById('btnDownload');
+    const btnDelete = document.getElementById('btnDelete');
+    const errorEl = document.getElementById('error');
+
+    let facingMode = 'environment';
+    let stream = null;
+    let photos = []; // { blob, url }
+    let currentIndex = -1;
+
+    async function startCamera() {
+      if (stream) {
+        stream.getTracks().forEach(t => t.stop());
+      }
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode, width: { ideal: 3840 }, height: { ideal: 2160 } },
+          audio: false
+        });
+        video.srcObject = stream;
+        errorEl.style.display = 'none';
+        video.style.display = '';
+      } catch (e) {
+        video.style.display = 'none';
+        errorEl.style.display = 'flex';
+        errorEl.textContent = 'Camera access is required.\nPlease allow camera permission and reload.';
+      }
+    }
+
+    function takePhoto() {
+      if (!stream) return;
+      const track = stream.getVideoTracks()[0];
+      const settings = track.getSettings();
+      canvas.width = settings.width || video.videoWidth;
+      canvas.height = settings.height || video.videoHeight;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // Flash animation
+      flash.classList.remove('active');
+      void flash.offsetWidth;
+      flash.classList.add('active');
+
+      canvas.toBlob(blob => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        photos.push({ blob, url });
+        currentIndex = photos.length - 1;
+        updateThumbnail();
+      }, 'image/jpeg', 0.95);
+    }
+
+    function updateThumbnail() {
+      if (photos.length > 0) {
+        const last = photos[photos.length - 1];
+        thumbnail.src = last.url;
+        thumbnail.style.display = '';
+        noPhoto.style.display = 'none';
+      } else {
+        thumbnail.style.display = 'none';
+        noPhoto.style.display = '';
+      }
+    }
+
+    function showPreview(index) {
+      if (index < 0 || index >= photos.length) return;
+      currentIndex = index;
+      previewImage.src = photos[index].url;
+      preview.classList.add('active');
+    }
+
+    function hidePreview() {
+      preview.classList.remove('active');
+    }
+
+    async function sharePhoto() {
+      if (currentIndex < 0) return;
+      const photo = photos[currentIndex];
+      const file = new File([photo.blob], `photo_${Date.now()}.jpg`, { type: 'image/jpeg' });
+
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file] });
+        } catch (e) {
+          if (e.name !== 'AbortError') {
+            downloadPhoto();
+          }
+        }
+      } else {
+        downloadPhoto();
+      }
+    }
+
+    function downloadPhoto() {
+      if (currentIndex < 0) return;
+      const a = document.createElement('a');
+      a.href = photos[currentIndex].url;
+      a.download = `photo_${Date.now()}.jpg`;
+      a.click();
+    }
+
+    function deletePhoto() {
+      if (currentIndex < 0) return;
+      URL.revokeObjectURL(photos[currentIndex].url);
+      photos.splice(currentIndex, 1);
+      if (photos.length === 0) {
+        currentIndex = -1;
+        hidePreview();
+      } else {
+        currentIndex = Math.min(currentIndex, photos.length - 1);
+        previewImage.src = photos[currentIndex].url;
+      }
+      updateThumbnail();
+    }
+
+    // Event listeners
+    btnShutter.addEventListener('click', takePhoto);
+
+    btnSwitch.addEventListener('click', () => {
+      facingMode = facingMode === 'environment' ? 'user' : 'environment';
+      startCamera();
+    });
+
+    btnGallery.addEventListener('click', () => {
+      if (photos.length > 0) {
+        showPreview(photos.length - 1);
+      }
+    });
+
+    btnBack.addEventListener('click', hidePreview);
+    btnShare.addEventListener('click', sharePhoto);
+    btnDownload.addEventListener('click', downloadPhoto);
+    btnDelete.addEventListener('click', deletePhoto);
+
+    // Swipe left/right in preview
+    let touchStartX = 0;
+    preview.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; });
+    preview.addEventListener('touchend', e => {
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      if (Math.abs(dx) > 50) {
+        const next = currentIndex + (dx < 0 ? 1 : -1);
+        if (next >= 0 && next < photos.length) {
+          showPreview(next);
+        }
+      }
+    });
+
+    // Volume button shutter (keydown)
+    document.addEventListener('keydown', e => {
+      if (e.key === 'AudioVolumeUp' || e.key === 'AudioVolumeDown' ||
+          e.key === 'VolumeUp' || e.key === 'VolumeDown') {
+        e.preventDefault();
+        if (!preview.classList.contains('active')) {
+          takePhoto();
+        }
+      }
+    });
+
+    startCamera();
+  </script>
+</body>
+</html>
