@@ -80,6 +80,17 @@ body {
 }
 .file-btn:hover { background: #3b7af0; }
 
+#topbar a.manual-link {
+  background: var(--panel2);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 9px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+#topbar a.manual-link:hover { background: #41454e; }
+
 #topbar input.num {
   width: 78px;
   background: var(--panel2);

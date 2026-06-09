@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DS9 Web Viewer — 使い方ガイド</title>
+<style>
+  :root { color-scheme: dark; }
+  body {
+    margin: 0;
+    background: #1a1d21;
+    color: #d7dade;
+    font-family: -apple-system, "Hiragino Kaku Gothic ProN", "Noto Sans JP", Meiryo, sans-serif;
+    line-height: 1.75;
+  }
+  .topnav {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; align-items: center; gap: 16px;
+    padding: 10px 20px;
+    background: #22262b; border-bottom: 1px solid #353b42;
+  }
+  .topnav .brand { font-weight: 700; color: #8ec7ff; }
+  .topnav a { color: #9fd0ff; text-decoration: none; }
+  .topnav a:hover { text-decoration: underline; }
+  main {
+    max-width: 880px; margin: 0 auto; padding: 32px 24px 96px;
+  }
+  h1, h2, h3, h4 { color: #fff; line-height: 1.35; margin-top: 1.8em; }
+  h1 { font-size: 1.8rem; border-bottom: 2px solid #3a4046; padding-bottom: .3em; margin-top: .4em; }
+  h2 { font-size: 1.4rem; border-bottom: 1px solid #353b42; padding-bottom: .25em; }
+  h3 { font-size: 1.15rem; }
+  a { color: #9fd0ff; }
+  code {
+    background: #2b3036; color: #f0c987;
+    padding: .12em .4em; border-radius: 4px;
+    font-family: "SF Mono", Menlo, Consolas, monospace; font-size: .9em;
+  }
+  pre {
+    background: #15181b; border: 1px solid #2c3137; border-radius: 8px;
+    padding: 14px 16px; overflow-x: auto;
+  }
+  pre code { background: none; color: #cfe3d2; padding: 0; }
+  table {
+    border-collapse: collapse; width: 100%; margin: 1em 0; font-size: .95rem;
+  }
+  th, td { border: 1px solid #353b42; padding: 7px 11px; text-align: left; vertical-align: top; }
+  th { background: #272c31; color: #fff; }
+  tr:nth-child(even) td { background: #1f2327; }
+  ul, ol { padding-left: 1.5em; }
+  li { margin: .25em 0; }
+  hr { border: none; border-top: 1px solid #353b42; margin: 2em 0; }
+  blockquote { border-left: 3px solid #4a5158; margin: 1em 0; padding: .2em 1em; color: #aab1b8; }
+  .loading { color: #8b949e; padding: 40px 0; }
+</style>
+</head>
+<body>
+<nav class="topnav">
+  <span class="brand">DS9 Web Viewer</span>
+  <a href="index.html">&larr; ビューワに戻る</a>
+</nav>
+<main id="doc"><p class="loading">読み込み中…</p></main>
+
+<script>
+// USAGE.md（日本語マニュアル）を単一ソースとして実行時に整形表示する軽量レンダラ。
+function escapeHtml(s) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+function inline(s) {
+  // バッククォートで分割し、奇数番（コード内）は escape のみ、偶数番（コード外）は
+  // escape + 太字 + リンクを適用。プレースホルダを使わないので本文の数字と衝突しない。
+  var parts = s.split("`");
+  return parts.map(function (seg, idx) {
+    if (idx % 2 === 1) return "<code>" + escapeHtml(seg) + "</code>";
+    seg = escapeHtml(seg);
+    seg = seg.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    seg = seg.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+    return seg;
+  }).join("");
+}
+function renderMarkdown(md) {
+  var lines = md.replace(/\r\n/g, "\n").split("\n");
+  var html = "", i = 0;
+  while (i < lines.length) {
+    var line = lines[i];
+
+    // コードブロック
+    var fence = line.match(/^```(\w*)/);
+    if (fence) {
+      i++;
+      var buf = [];
+      while (i < lines.length && !/^```/.test(lines[i])) { buf.push(lines[i]); i++; }
+      i++; // 終端フェンス
+      html += "<pre><code>" + escapeHtml(buf.join("\n")) + "</code></pre>\n";
+      continue;
+    }
+
+    // テーブル（| ... | と次行が区切り）
+    if (/^\s*\|.*\|\s*$/.test(line) && i + 1 < lines.length && /^\s*\|[\s:|-]+\|\s*$/.test(lines[i + 1])) {
+      var splitRow = function (r) { return r.trim().replace(/^\||\|$/g, "").split("|").map(function (c) { return c.trim(); }); };
+      var head = splitRow(line);
+      i += 2; // ヘッダ＋区切り
+      var body = [];
+      while (i < lines.length && /^\s*\|.*\|\s*$/.test(lines[i])) { body.push(splitRow(lines[i])); i++; }
+      html += "<table><thead><tr>" + head.map(function (c) { return "<th>" + inline(c) + "</th>"; }).join("") + "</tr></thead><tbody>";
+      html += body.map(function (r) { return "<tr>" + r.map(function (c) { return "<td>" + inline(c) + "</td>"; }).join("") + "</tr>"; }).join("");
+      html += "</tbody></table>\n";
+      continue;
+    }
+
+    // 見出し
+    var h = line.match(/^(#{1,6})\s+(.*)$/);
+    if (h) { var lv = h[1].length; html += "<h" + lv + ">" + inline(h[2]) + "</h" + lv + ">\n"; i++; continue; }
+
+    // 水平線
+    if (/^\s*---+\s*$/.test(line)) { html += "<hr>\n"; i++; continue; }
+
+    // 引用
+    if (/^\s*>\s?/.test(line)) {
+      var qbuf = [];
+      while (i < lines.length && /^\s*>\s?/.test(lines[i])) { qbuf.push(lines[i].replace(/^\s*>\s?/, "")); i++; }
+      html += "<blockquote>" + inline(qbuf.join(" ")) + "</blockquote>\n";
+      continue;
+    }
+
+    // 順序付きリスト
+    if (/^\s*\d+\.\s+/.test(line)) {
+      var oitems = [];
+      while (i < lines.length && /^\s*\d+\.\s+/.test(lines[i])) { oitems.push(lines[i].replace(/^\s*\d+\.\s+/, "")); i++; }
+      html += "<ol>" + oitems.map(function (t) { return "<li>" + inline(t) + "</li>"; }).join("") + "</ol>\n";
+      continue;
+    }
+
+    // 箇条書き
+    if (/^\s*[-*]\s+/.test(line)) {
+      var uitems = [];
+      while (i < lines.length && /^\s*[-*]\s+/.test(lines[i])) { uitems.push(lines[i].replace(/^\s*[-*]\s+/, "")); i++; }
+      html += "<ul>" + uitems.map(function (t) { return "<li>" + inline(t) + "</li>"; }).join("") + "</ul>\n";
+      continue;
+    }
+
+    // 空行
+    if (/^\s*$/.test(line)) { i++; continue; }
+
+    // 段落（連続する非空行をまとめる）
+    var para = [];
+    while (i < lines.length && !/^\s*$/.test(lines[i]) && !/^(#{1,6})\s/.test(lines[i])
+           && !/^```/.test(lines[i]) && !/^\s*[-*]\s+/.test(lines[i]) && !/^\s*\d+\.\s+/.test(lines[i])
+           && !/^\s*\|.*\|\s*$/.test(lines[i]) && !/^\s*---+\s*$/.test(lines[i]) && !/^\s*>\s?/.test(lines[i])) {
+      para.push(lines[i]); i++;
+    }
+    html += "<p>" + inline(para.join(" ")) + "</p>\n";
+  }
+  return html;
+}
+
+fetch("USAGE.md")
+  .then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); })
+  .then(function (md) {
+    document.getElementById("doc").innerHTML = renderMarkdown(md);
+  })
+  .catch(function (err) {
+    document.getElementById("doc").innerHTML =
+      '<p class="loading">マニュアル（USAGE.md）を読み込めませんでした（' + err.message +
+      '）。<br>このページは Web サーバ経由で開いてください（<code>file://</code> では制限される場合があります）。</p>';
+  });
+</script>
+</body>
+</html>
