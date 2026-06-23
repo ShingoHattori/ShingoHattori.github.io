@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>無音カメラ - サポート / Support</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Segoe UI", sans-serif;
+            line-height: 1.8;
+            color: #333;
+            background: #fafafa;
+        }
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 48px 24px;
+        }
+        h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+        .app-name {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 40px;
+        }
+        .lang-toggle {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 32px;
+        }
+        .lang-toggle button {
+            padding: 6px 16px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background: #fff;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .lang-toggle button.active {
+            background: #333;
+            color: #fff;
+            border-color: #333;
+        }
+        section { display: none; }
+        section.active { display: block; }
+        h2 {
+            font-size: 20px;
+            margin: 32px 0 12px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        h2:first-child { margin-top: 0; }
+        p, li { margin-bottom: 12px; }
+        ul { padding-left: 24px; margin-bottom: 16px; }
+        a { color: #0066cc; }
+        .contact-box {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 24px;
+            margin-top: 24px;
+        }
+        .contact-box p { margin-bottom: 8px; }
+        .nav { margin-top: 48px; font-size: 13px; color: #999; }
+        .nav a { color: #999; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Support</h1>
+        <div class="app-name">無音カメラ / MuonCamera</div>
+
+        <div class="lang-toggle">
+            <button class="active" onclick="switchLang('ja')">日本語</button>
+            <button onclick="switchLang('en')">English</button>
+        </div>
+
+        <section id="ja" class="active">
+            <h2>使い方</h2>
+            <ul>
+                <li><strong>写真を撮る</strong>: シャッターボタンをタップ。シャッター音は鳴りません。</li>
+                <li><strong>動画を撮る</strong>: シャッターを長押しすると録画、離すと停止（QuickTake）。押しながら右へスワイプで録画ロック、左へスワイプで連写。</li>
+                <li><strong>写真／ビデオ切替</strong>: 画面を左右にスワイプ、または下部の「写真／ビデオ」をタップ。</li>
+                <li><strong>ズーム・レンズ切替</strong>: ピンチでズーム。複数レンズ搭載機種では 0.5×／1×／望遠のボタンで切替。</li>
+                <li><strong>フォーカス・露出</strong>: 画面をタップでフォーカス。タップ後に上下スワイプで露出を補正。</li>
+                <li><strong>QR・バーコード</strong>: コードにかざすと自動検出。黄色い枠をタップでURLを開く／内容をコピー。</li>
+                <li><strong>ギャラリー</strong>: 左下のサムネイルをタップ。撮影をすぐ確認・共有・削除できます。</li>
+                <li><strong>ボリュームボタン撮影</strong>: 設定でオンにすると音量ボタンでも撮影できます。</li>
+                <li><strong>ウィジェット</strong>: ロック画面・ホーム画面・コントロールセンター（iOS 18）に追加して素早く起動できます。</li>
+            </ul>
+
+            <h2>全機能の解放について</h2>
+            <p>無料版は1日5枚まで撮影できます。次のいずれかで無制限に解放されます。</p>
+            <ul>
+                <li><strong>¥100の買い切り</strong>（サブスクなし・広告なし）</li>
+                <li><strong>友達を3人紹介</strong>（設定→紹介コードを共有）</li>
+                <li><strong>クーポンコード</strong>（設定→「コードを入力」）</li>
+            </ul>
+
+            <h2>よくある質問</h2>
+            <p><strong>Q: カメラが映りません</strong></p>
+            <p>A: 設定アプリ → 無音カメラ → カメラ のアクセス許可をオンにしてください。</p>
+
+            <p><strong>Q: 写真が保存できません</strong></p>
+            <p>A: 設定アプリ → 無音カメラ → 写真 のアクセス許可をオンにしてください。</p>
+
+            <p><strong>Q: アプリ内ギャラリーに写真が表示されません</strong></p>
+            <p>A: 写真へのアクセスを「すべての写真」に設定してください（設定アプリ → 無音カメラ → 写真）。</p>
+
+            <p><strong>Q: 紹介・クーポンコードが使えません</strong></p>
+            <p>A: コード機能には iCloud が必要です。端末が iCloud にサインインしているか確認してください。</p>
+
+            <h2>お問い合わせ</h2>
+            <div class="contact-box">
+                <p>ご質問・不具合報告は以下までご連絡ください。</p>
+                <p><a href="mailto:shatto@llhi.org">shatto@llhi.org</a></p>
+            </div>
+
+            <div class="nav"><a href="privacy.html">プライバシーポリシー</a></div>
+        </section>
+
+        <section id="en">
+            <h2>How to Use</h2>
+            <ul>
+                <li><strong>Take a Photo</strong>: Tap the shutter button. No shutter sound is played.</li>
+                <li><strong>Record Video</strong>: Press and hold the shutter to record, release to stop (QuickTake). While holding, slide right to lock recording, slide left for burst.</li>
+                <li><strong>Photo / Video Mode</strong>: Swipe the screen left/right, or tap "Photo / Video" at the bottom.</li>
+                <li><strong>Zoom &amp; Lenses</strong>: Pinch to zoom. On multi-lens devices, switch between 0.5× / 1× / tele with the buttons.</li>
+                <li><strong>Focus &amp; Exposure</strong>: Tap to focus. After tapping, swipe up/down to adjust exposure.</li>
+                <li><strong>QR / Barcode</strong>: Point at a code to detect it automatically. Tap the yellow box to open the URL or copy the contents.</li>
+                <li><strong>Gallery</strong>: Tap the bottom-left thumbnail to review, share and delete your shots.</li>
+                <li><strong>Volume-Button Shutter</strong>: Enable it in settings to shoot with the volume buttons.</li>
+                <li><strong>Widgets</strong>: Add to the Lock Screen, Home Screen, or Control Center (iOS 18) for quick launch.</li>
+            </ul>
+
+            <h2>Unlocking All Features</h2>
+            <p>The free tier lets you take 5 photos per day. Unlock unlimited capture with any of the following:</p>
+            <ul>
+                <li><strong>One-time ¥100 purchase</strong> (no subscription, no ads)</li>
+                <li><strong>Refer 3 friends</strong> (Settings → share your referral code)</li>
+                <li><strong>Coupon code</strong> (Settings → "Enter a code")</li>
+            </ul>
+
+            <h2>FAQ</h2>
+            <p><strong>Q: The camera doesn't work</strong></p>
+            <p>A: Go to Settings &rarr; MuonCamera &rarr; Camera and enable access.</p>
+
+            <p><strong>Q: I can't save photos</strong></p>
+            <p>A: Go to Settings &rarr; MuonCamera &rarr; Photos and enable access.</p>
+
+            <p><strong>Q: The in-app gallery shows no photos</strong></p>
+            <p>A: Set photo access to "All Photos" (Settings &rarr; MuonCamera &rarr; Photos).</p>
+
+            <p><strong>Q: Referral / coupon codes don't work</strong></p>
+            <p>A: The code feature requires iCloud. Make sure your device is signed in to iCloud.</p>
+
+            <h2>Contact</h2>
+            <div class="contact-box">
+                <p>For questions or bug reports, please contact us at:</p>
+                <p><a href="mailto:shatto@llhi.org">shatto@llhi.org</a></p>
+            </div>
+
+            <div class="nav"><a href="privacy.html">Privacy Policy</a></div>
+        </section>
+    </div>
+
+    <script>
+        function switchLang(lang) {
+            document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.lang-toggle button').forEach(b => b.classList.remove('active'));
+            document.getElementById(lang).classList.add('active');
+            document.querySelector(`[onclick="switchLang('${lang}')"]`).classList.add('active');
+        }
+    </script>
+</body>
+</html>
