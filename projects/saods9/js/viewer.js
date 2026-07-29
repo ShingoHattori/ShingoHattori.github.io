@@ -78,6 +78,7 @@
       this.cy = 0;
 
       this.onReadout = null;      // callback(info) for status bar
+      this._lastCursor = null;    // last cursor {sx,sy} for readout refresh
       this.onChange = null;       // callback() after view/colormap changes (panels)
       this.overlay = null;        // function(ctx) painted on top of the image
       this.pointerHook = null;    // {down,move,up} — consumes events before pan
@@ -158,6 +159,14 @@
       if (!this.lockScale) this.recomputeLimits();
       this.renderImage();
       this.draw();
+      this.refreshReadout();   // re-read value under the cursor at the new plane
+    }
+
+    // Re-emit the readout at the last known cursor position (e.g. after the
+    // displayed plane changes) so value/magnifier/plots update without moving
+    // the mouse.
+    refreshReadout() {
+      if (this._lastCursor) this._emitReadout(this._lastCursor.sx, this._lastCursor.sy);
     }
 
     recomputeLimits() {
@@ -483,10 +492,11 @@
         } else if (hook() && hook().move) {
           hook().move(sx, sy, e, false);    // hover (cursor feedback)
         }
+        this._lastCursor = { sx, sy };
         this._emitReadout(sx, sy);
       });
 
-      c.addEventListener('mouseleave', () => { if (this.onReadout) this.onReadout(null); });
+      c.addEventListener('mouseleave', () => { this._lastCursor = null; if (this.onReadout) this.onReadout(null); });
       c.addEventListener('contextmenu', (e) => e.preventDefault());
 
       c.addEventListener('wheel', (e) => {
